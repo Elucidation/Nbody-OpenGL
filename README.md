@@ -1,8 +1,10 @@
 # Play
 ---
-This is a sandbox for practicing OpenGL using [GLFW](http://www.glfw.org)
 
+**WARNING MASTER BRANCH IS EXPERIMENTAL AND WILL PROBABLY BREAK**
 
+This is a sandbox for practicing OpenGL using [GLFW](http://www.glfw.org).
+Check the other branches for working examples
 
 ## Compiling
 

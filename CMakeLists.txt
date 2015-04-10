@@ -1,3 +1,4 @@
+
 cmake_minimum_required (VERSION 2.6)
 project ( PLAY )
 
@@ -28,3 +29,7 @@ add_executable(play play.cpp)
 
 # Link libraries
 target_link_libraries(play ${GLFW_LIBRARIES} ${GL_LIBRARY})
+
+# Copy shaders over
+configure_file(BasicVertexShader.vert BasicVertexShader.vert COPYONLY)
+configure_file(BasicFragmentShader.frag BasicFragmentShader.frag COPYONLY)
