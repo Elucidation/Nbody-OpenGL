@@ -1,6 +1,7 @@
-#include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 using namespace glm;
 
@@ -18,24 +19,31 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 
 GLFWwindow* setupGL()
 {
-    GLFWwindow* window;
     glfwSetErrorCallback(error_callback);
 
     if (!glfwInit())
+    {
+        fprintf(stderr, "Failed to initialize GLFW\n");
         exit(EXIT_FAILURE);
+    }
 
     glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
 
-    // Need OpenGL3.3 so not on this laptop
-    // glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // We want OpenGL 3.3
-    // glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    // If you are crashing here it probably means your machine doesn't
+    // support OpenGL 3.3, so comment out these lines
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // We want OpenGL 3.3
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     // glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
+
+    // Using the following line requires full vertex and fragment shaders
     // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //We don't want the old OpenGL 
 
-    window = glfwCreateWindow(640, 480, "I am Sam", NULL, NULL);
+    GLFWwindow* window;
+    window = glfwCreateWindow(640, 480, "Play", NULL, NULL);
 
     if (!window)
     {
+        fprintf(stderr, "Failed to open GLFW window\n");
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
@@ -43,14 +51,27 @@ GLFWwindow* setupGL()
     return window;
 }
 
+void initGlew()
+{
+    glewExperimental=GL_TRUE; // Needed in core profile 
+
+    if (glewInit() != GLEW_OK) {
+        fprintf(stderr, "Failed to initialize GLEW\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
 int main(int argc, char const *argv[])
 {
     // Setup
-     GLFWwindow* window = setupGL();
+    GLFWwindow* window = setupGL();
 
     // The meat
 
     glfwMakeContextCurrent(window);
+
+    initGlew();
+
     glfwSwapInterval(1);
     
     glfwSetKeyCallback(window, key_callback);
