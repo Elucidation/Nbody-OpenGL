@@ -8,14 +8,6 @@ find_package(PkgConfig REQUIRED)
 pkg_search_module(GLFW REQUIRED glfw3)
 include_directories(${GLFW_INCLUDE_DIRS})
 
-# Add GLEW
-find_package(GLEW REQUIRED)
-if (NOT GLEW_FOUND)
-  message("ERROR: GLEW not found")
-endif()
-include_directories(${GLEW_INCLUDE_DIRS})
-link_libraries(${GLEW_LIBRARIES})
-
 # Add OpenGL
 find_package(OpenGL REQUIRED)
 if(NOT OPENGL_FOUND)

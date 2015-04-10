@@ -3,6 +3,8 @@
 This is a sandbox for practicing OpenGL using [GLFW](http://www.glfw.org)
 
 
+This branch has a basic spinning triangle example using OpenGL and GLFW
+
 
 ## Compiling
 
@@ -36,18 +38,3 @@ Go to [GLFW](http://www.glfw.org) and download the source, then follow the [inst
     error while loading shared libraries: libglfw.so.3: cannot open shared object file: No such file or directory
 
 Try running `sudo ldconfig`. Also make sure when you compiled and built glfw that you enabled SHARED_LIB in cmake (via gui or curses)
-
-#### Missing glm error
-
-    fatal error: glm/glm.hpp: No such file or directory
-     #include <glm/glm.hpp>
-                           ^
-Install GLM `sudo apt-get install libglm-dev`
-
-#### Missing glew error
-
-    fatal error: GL/glew.h: No such file or directory
-    #include <GL/glew.h>
-                        ^
-
-Install glew `sudo apt-get install libglew-dev`
