@@ -1,6 +1,8 @@
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <glm/glm.hpp>
+using namespace glm;
 
 
 void error_callback(int error, const char* description)
@@ -14,15 +16,21 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         glfwSetWindowShouldClose(window, GL_TRUE);
 }
 
-int main(int argc, char const *argv[])
+GLFWwindow* setupGL()
 {
-    // Setup
     GLFWwindow* window;
-
     glfwSetErrorCallback(error_callback);
 
     if (!glfwInit())
         exit(EXIT_FAILURE);
+
+    glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
+
+    // Need OpenGL3.3 so not on this laptop
+    // glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // We want OpenGL 3.3
+    // glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    // glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
+    // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //We don't want the old OpenGL 
 
     window = glfwCreateWindow(640, 480, "I am Sam", NULL, NULL);
 
@@ -32,14 +40,20 @@ int main(int argc, char const *argv[])
         exit(EXIT_FAILURE);
     }
 
+    return window;
+}
+
+int main(int argc, char const *argv[])
+{
+    // Setup
+     GLFWwindow* window = setupGL();
+
     // The meat
 
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
     
     glfwSetKeyCallback(window, key_callback);
-
-
 
 
     while (!glfwWindowShouldClose(window))
@@ -79,5 +93,5 @@ int main(int argc, char const *argv[])
     glfwDestroyWindow(window);
 
     glfwTerminate();
-    return 0;
+    exit(EXIT_SUCCESS);
 }   
