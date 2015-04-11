@@ -108,18 +108,21 @@ int main(int argc, char const *argv[])
        0.0f,  1.0f, 0.0f,
     };
 
-    glm::mat4 myScalingMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(2.0f));
+    glm::mat4 translateMat = glm::translate(glm::mat4(1.0f), glm::vec3(10.0f,0.f,0.f));
+    glm::mat4 rotateMat = glm::rotate(glm::mat4(1.0f), glm::half_pi<float>(), glm::vec3(1.0f,0.f,0.f));
+    glm::mat4 scaleMat = glm::scale(glm::mat4(1.0f), glm::vec3(2.0f));
 
 
-    glm::mat4 myTranslateMatrix = glm::translate(
-        glm::mat4(1.0f), glm::vec3(10.0f,0.f,0.f));
 
     glm::vec4 myVector(5.0f, 6.0f, 7.0f, 1.0f);
-    glm::vec4 transformedVector = myScalingMatrix * myTranslateMatrix * myVector; // Again, in this order ! this is important.
+
+    // T * R * S * V order
+    glm::vec4 transformedVector = translateMat * rotateMat * scaleMat * myVector; 
 
     printf("Vector: %s\n", to_string(myVector).c_str());
-    printf("S Matrix: %s\n", to_string(myScalingMatrix).c_str());
-    printf("T Matrix: %s\n", to_string(myTranslateMatrix).c_str());
+    printf("T Matrix: %s\n", to_string(translateMat).c_str());
+    printf("R Matrix: %s\n", to_string(rotateMat).c_str());
+    printf("S Matrix: %s\n", to_string(scaleMat).c_str());
     printf("Transformed Vector: %s\n", to_string(transformedVector).c_str());
 
 
