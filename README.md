@@ -1,5 +1,10 @@
 # Play
 ---
+**Spinning Triangle example**
+
+![Spinning Triangle](spinning_triangle.gif)
+
+
 This is a sandbox for practicing OpenGL using [GLFW](www.glfw.org)
 
 
