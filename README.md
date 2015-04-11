@@ -6,6 +6,8 @@
 This is a sandbox for practicing OpenGL using [GLFW](http://www.glfw.org).
 Check the other branches for working examples
 
+Following the tutorials at [opengl-tutorials](http://www.opengl-tutorial.org/beginners-tutorials/tutorial-4-a-colored-cube/)
+
 ## Compiling
 
 Use CMake to generate the makefile with properly linked libraries in `build/` (If it doesn't exist create it using `mkdir build/`)

@@ -33,3 +33,5 @@ target_link_libraries(play ${GLFW_LIBRARIES} ${GL_LIBRARY})
 # Copy shaders over
 configure_file(BasicVertexShader.vert BasicVertexShader.vert COPYONLY)
 configure_file(BasicFragmentShader.frag BasicFragmentShader.frag COPYONLY)
+configure_file(uvtemplate.bmp uvtemplate.bmp COPYONLY)
+configure_file(uvtemplate.DDS uvtemplate.DDS COPYONLY)
