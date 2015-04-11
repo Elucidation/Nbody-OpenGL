@@ -1,7 +1,9 @@
 # Play
 ---
 
-**WARNING MASTER BRANCH IS EXPERIMENTAL AND WILL PROBABLY BREAK**
+**Static red triangle using GLSL vertex shader and fragmenter**
+
+![red triangle](triangle.png)
 
 This is a sandbox for practicing OpenGL using [GLFW](http://www.glfw.org).
 Check the other branches for working examples
