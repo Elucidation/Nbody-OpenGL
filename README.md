@@ -1,7 +1,8 @@
 # Play
 ---
+**Moving camera with arrow keys and mouse around a textured cube**
 
-**WARNING MASTER BRANCH IS EXPERIMENTAL AND WILL PROBABLY BREAK**
+![Moving around cube](moving_box.gif)
 
 This is a sandbox for practicing OpenGL using [GLFW](http://www.glfw.org).
 Check the other branches for working examples
