@@ -7,6 +7,7 @@
 
 // GLFW
 #include <GLFW/glfw3.h>
+GLFWwindow* window; // Needed by controls.cpp
 
 // GLM
 #define GLM_FORCE_RADIANS
@@ -15,8 +16,13 @@
 using namespace glm;
 
 // Shader
-#include "loadShader.cpp"
-#include "texture.cpp"
+#include "loadShader.hpp"
+
+// TextureIDs
+#include "texture.hpp"
+
+// Controls
+#include "controls.hpp"
 
 // Functions
 void error_callback(int error, const char* description);
@@ -27,7 +33,7 @@ void initGlew();
 int main(int argc, char const *argv[])
 {
     // Setup
-    GLFWwindow* window = setupGL();
+    window = setupGL();
 
     glfwMakeContextCurrent(window);
 
@@ -35,57 +41,50 @@ int main(int argc, char const *argv[])
     initGlew();
 
     // Set update rate & keyboard callbacks
-    glfwSwapInterval(1);
+    // glfwSwapInterval(1); // breaks getCursor/setCursor stuff
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
     glfwSetKeyCallback(window, key_callback);
+
+    // Ensure we can capture the escape key being pressed below
+    glfwSetCursorPos(window, 1024/2, 768/2);
 
     // Dark blue background
     glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
 
+    // Enable depth test
+    glEnable(GL_DEPTH_TEST);
+    // Accept fragment if it closer to the camera than the former one
+    glDepthFunc(GL_LESS); 
+
+    // Cull triangles which normal is not towards the camera
+    glEnable(GL_CULL_FACE);
+
+    // Create and compile our GLSL program from the shaders
+    GLuint programID = LoadShaders("BasicVertexShader.vert", 
+                                   "BasicFragmentShader.frag");
+
+
+    // Load textures
     // GLuint Texture = loadBMP_custom("uvtemplate.bmp");
     // DXT compression comes from the DirectX world, 
     // where the V texture coordinate is inversed compared to OpenGL. 
-    GLuint Texture = loadDDS("uvtemplate.DDS"); // ( coord.u, 1.0-coord.v)
+    // GLuint Texture = loadDDS("uvtemplate.DDS"); // ( coord.u, 1.0-coord.v)
+    GLuint Texture = loadDDS("test.DDS"); // ( coord.u, 1.0-coord.v)
+    // GLuint Texture = loadDDS("point.DDS"); // ( coord.u, 1.0-coord.v)
+
+    // Get a handle for our "myTextureSampler" uniform
+    GLuint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
 
     // Set up arrays
     // Do this once your window is created (= after the OpenGL Context creation)
     // and before any other OpenGL call.
     GLuint VertexArrayID;
     glGenVertexArrays(1, &VertexArrayID);
-    glBindVertexArray(VertexArrayID);
-
-    // Load textures
-
-    // Create and compile our GLSL program from the shaders
-    GLuint programID = LoadShaders("BasicVertexShader.vert", 
-                                   "BasicFragmentShader.frag");
+    glBindVertexArray(VertexArrayID);    
 
     // Get a handle for our "MVP" uniform.
     // Only at initialisation time.
     GLuint MatrixID = glGetUniformLocation(programID, "MVP");
-
-    // glm::mat4 translateMat = glm::translate(glm::mat4(1.0f), glm::vec3(10.0f,0.f,0.f));
-    // glm::mat4 rotateMat = glm::rotate(glm::mat4(1.0f), glm::half_pi<float>(), glm::vec3(1.0f,0.f,0.f));
-    // glm::mat4 scaleMat = glm::scale(glm::mat4(1.0f), glm::vec3(2.0f));
-    // glm::mat4 modelMat = translateMat * rotateMat * scaleMat;
-    
-    glm::vec3 cameraPos = glm::vec3(4.0f, 3.0f, 3.0f);
-    glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f,0.0f);
-    glm::mat4 viewMatrix = glm::lookAt(cameraPos, cameraTarget, glm::vec3(0.0f,1.0f,0.0f));
-
-    float FoV = glm::radians<float>(40);
-
-    glm::mat4 projectionMatrix = glm::perspective(
-        FoV,         // The horizontal Field of View, in degrees : the amount of "zoom". Think "camera lens". Usually between 90° (extra wide) and 30° (quite zoomed in)
-        4.0f / 3.0f, // Aspect Ratio. Depends on the size of your window. Notice that 4/3 == 800/600 == 1280/960, sounds familiar ?
-        0.1f,        // Near clipping plane. Keep as big as possible, or you'll get precision issues.
-        100.0f       // Far clipping plane. Keep as little as possible.
-    );
-
-    // Model matrix : an identity matrix (model will be at the origin)
-    glm::mat4 modelMat = glm::mat4(1.0f);  // Changes for each model !
-
-    // C++ : compute the matrix (inverted)
-    glm::mat4 MVPmatrix = projectionMatrix * viewMatrix * modelMat; // Remember : inverted !; 
 
     //////////////////////////////////
     // Set up vertex Buffer
@@ -189,21 +188,41 @@ int main(int argc, char const *argv[])
     glBindBuffer(GL_ARRAY_BUFFER, uv_buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(g_uv_buffer_data), g_uv_buffer_data, GL_STATIC_DRAW);
 
-    // Enable depth test
-    glEnable(GL_DEPTH_TEST);
-    // Accept fragment if it closer to the camera than the former one
-    glDepthFunc(GL_LESS);
+    double lastTime = glfwGetTime();
+    int nbFrames = 0;
 
     while (!glfwWindowShouldClose(window))
     {
+        // Measure speed
+        double currentTime = glfwGetTime();
+        nbFrames++;
+        if ( currentTime - lastTime >= 1.0 ){ // If last prinf() was more than 1 sec ago
+            // printf and reset timer
+            printf("%f ms/frame\n", 1000.0/double(nbFrames));
+            nbFrames = 0;
+            lastTime += 1.0;
+        }
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Use our shader
         glUseProgram(programID);
 
+        // Compute the MVP matrix from keyboard and mouse input
+        computeMatricesFromInputs();
+        glm::mat4 ProjectionMatrix = getProjectionMatrix();
+        glm::mat4 ViewMatrix = getViewMatrix();
+        glm::mat4 ModelMatrix = glm::mat4(1.0);
+        glm::mat4 MVPmatrix = ProjectionMatrix * ViewMatrix * ModelMatrix;
+
         // Send our transformation to the currently bound shader,
         // in the "MVP" uniform
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVPmatrix[0][0]);
+
+        // Bind texture to Texture Unit 0
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, Texture);
+        glUniform1i(TextureID, 0);
 
         // 1st attribute buffer : vertices
         glEnableVertexAttribArray(0);
@@ -233,16 +252,10 @@ int main(int argc, char const *argv[])
         glDrawArrays(GL_TRIANGLES, 0, 12*3); // Starting from vertex 0; 3 vertices total -> 1 triangle
          
         glDisableVertexAttribArray(0);
+        glDisableVertexAttribArray(1);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
-
-        cameraPos = glm::vec3(4.0f -(float) glfwGetTime() * 0.1f, 3.0f, 3.0f);
-        // cameraTarget = glm::vec3(0.0f, 0.0f,0.0f);
-        viewMatrix = glm::lookAt(cameraPos, cameraTarget, glm::vec3(0.0f,1.0f,0.0f));
-
-        // C++ : compute the matrix (inverted)
-        MVPmatrix = projectionMatrix * viewMatrix * modelMat; // Remember : inverted !; 
     }
 
     // Wrap up
@@ -250,7 +263,9 @@ int main(int argc, char const *argv[])
 
     // Cleanup VBO and shader
     glDeleteBuffers(1, &vertexbuffer);
+    glDeleteBuffers(1, &uv_buffer);
     glDeleteProgram(programID);
+    glDeleteVertexArrays(1, &TextureID);
     glDeleteVertexArrays(1, &VertexArrayID);
 
     glfwTerminate();
@@ -297,7 +312,7 @@ GLFWwindow* setupGL()
     // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE); 
 
     GLFWwindow* window;
-    window = glfwCreateWindow(640, 480, "Play", NULL, NULL);
+    window = glfwCreateWindow(1024, 768, "Play", NULL, NULL);
 
     if (!window)
     {

@@ -24,14 +24,27 @@ if(NOT OPENGL_FOUND)
 endif(NOT OPENGL_FOUND)
 set(GL_LIBRARY GL GLU X11)
 
+# Create Shader/Texture/Controls libraries
+add_library(Shader loadShader.cpp loadShader.hpp)
+add_library(Texture texture.cpp texture.hpp)
+add_library(Controls controls.cpp controls.hpp)
+set(SOURCES play.cpp loadShader.hpp texture.hpp controls.hpp)
+
 # Executables
-add_executable(play play.cpp)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+add_executable(play ${SOURCES})
+
 
 # Link libraries
-target_link_libraries(play ${GLFW_LIBRARIES} ${GL_LIBRARY})
+set(COMMON Shader Texture Controls)
+target_link_libraries(play ${GLFW_LIBRARIES} ${GL_LIBRARY} ${COMMON})
 
 # Copy shaders over
 configure_file(BasicVertexShader.vert BasicVertexShader.vert COPYONLY)
 configure_file(BasicFragmentShader.frag BasicFragmentShader.frag COPYONLY)
-configure_file(uvtemplate.bmp uvtemplate.bmp COPYONLY)
-configure_file(uvtemplate.DDS uvtemplate.DDS COPYONLY)
+
+# Copy textures over
+# configure_file(uvtemplate.bmp uvtemplate.bmp COPYONLY)
+# configure_file(uvtemplate.DDS uvtemplate.DDS COPYONLY)
+# configure_file(point.DDS point.DDS COPYONLY)
+configure_file(test.DDS test.DDS COPYONLY)
