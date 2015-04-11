@@ -1,10 +1,23 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
+
+
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp> 
+#include <glm/ext.hpp>
+// #include <glm/gtc/matrix_transform.hpp>
+// #include <glm/gtx/transform.hpp> 
+// #include <glm/transform.hpp>
+// Use #include <glm/gtc/matrix_transform.hpp> and #include <glm/gtx/transform.hpp>
+
+
 using namespace glm;
+
 #include "loadShader.cpp"
+
 
 
 void error_callback(int error, const char* description)
@@ -80,6 +93,7 @@ int main(int argc, char const *argv[])
     glfwSwapInterval(1);
     glfwSetKeyCallback(window, key_callback);
 
+    /////////////////////////////////
     // Set up arrays
     // Do this once your window is created (= after the OpenGL Context creation)
     // and before any other OpenGL call.
@@ -94,6 +108,23 @@ int main(int argc, char const *argv[])
        0.0f,  1.0f, 0.0f,
     };
 
+    glm::mat4 myScalingMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(2.0f));
+
+
+    glm::mat4 myTranslateMatrix = glm::translate(
+        glm::mat4(1.0f), glm::vec3(10.0f,0.f,0.f));
+
+    glm::vec4 myVector(5.0f, 6.0f, 7.0f, 1.0f);
+    glm::vec4 transformedVector = myScalingMatrix * myTranslateMatrix * myVector; // Again, in this order ! this is important.
+
+    printf("Vector: %s\n", to_string(myVector).c_str());
+    printf("S Matrix: %s\n", to_string(myScalingMatrix).c_str());
+    printf("T Matrix: %s\n", to_string(myTranslateMatrix).c_str());
+    printf("Transformed Vector: %s\n", to_string(transformedVector).c_str());
+
+
+    //////////////////////////////////
+    // Set up vertex Buffer
     // This will identify our vertex buffer
     GLuint vertexbuffer;
      
