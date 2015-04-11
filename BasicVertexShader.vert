@@ -1,22 +1,33 @@
 #version 330 core
 
-// Notice that the "1" here equals the "1" in glVertexAttribPointer
-layout(location = 0) in vec3 vertexPosition_modelspace;
-layout(location = 1) in vec2 vertexUV;
-
-uniform mat4 MVP;
+// Input vertex data, different for all executions of this shader.
+layout(location = 0) in vec3 squareVertices;
+layout(location = 1) in vec4 xyzs; // Position of the center of the particule and size of the square
+layout(location = 2) in vec4 color; // Position of the center of the particule and size of the square
 
 // Output data ; will be interpolated for each fragment.
 out vec2 UV;
- 
-void main(){
- 
-    // Output position of the vertex, in clip space : MVP * position
-    // Transform an homogeneous 4D vector, remember ?
-    vec4 v = vec4(vertexPosition_modelspace,1); 
-    gl_Position = MVP * v;
+out vec4 particlecolor;
 
-    // UV of the vertex, pass it on but inverted
-    UV[0] = vertexUV[0]; // u
-    UV[1] = 1.0 - vertexUV[1]; // v
+// Values that stay constant for the whole mesh.
+uniform vec3 CameraRight_worldspace;
+uniform vec3 CameraUp_worldspace;
+uniform mat4 VP; // Model-View-Projection matrix, but without the Model (the position is in BillboardPos; the orientation depends on the camera)
+
+void main()
+{
+  float particleSize = xyzs.w; // because we encoded it this way.
+  vec3 particleCenter_wordspace = xyzs.xyz;
+  
+  vec3 vertexPosition_worldspace = 
+    particleCenter_wordspace
+    + CameraRight_worldspace * squareVertices.x * particleSize
+    + CameraUp_worldspace * squareVertices.y * particleSize;
+
+  // Output position of the vertex
+  gl_Position = VP * vec4(vertexPosition_worldspace, 1.0f);
+
+  // UV of the vertex. No special space for this one.
+  UV = squareVertices.xy + vec2(0.5, 0.5);
+  particlecolor = color;
 }

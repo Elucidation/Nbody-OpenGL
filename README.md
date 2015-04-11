@@ -1,12 +1,14 @@
 # Play
 ---
-
-**WARNING MASTER BRANCH IS EXPERIMENTAL AND WILL PROBABLY BREAK**
-
 This is a sandbox for practicing OpenGL using [GLFW](http://www.glfw.org).
 Check the other branches for working examples
 
-Following the tutorials at [opengl-tutorials](http://www.opengl-tutorial.org/beginners-tutorials/tutorial-4-a-colored-cube/)
+### 1 million particles
+
+![1M Particle Fountain](particles.gif)
+
+
+Following the tutorials at [opengl-tutorials](http://www.opengl-tutorial.org/beginners-tutorials/)
 
 ## Compiling
 

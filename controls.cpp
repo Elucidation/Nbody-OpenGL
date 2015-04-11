@@ -25,36 +25,42 @@ glm::mat4 getProjectionMatrix(){
 // Initial position : on +Z
 glm::vec3 position = glm::vec3( 0, 0, -5 ); 
 // Initial horizontal angle : toward -Z
-float horizontalAngle = 0.0f;
+float horizontalAngle = -3.14f;
 // Initial vertical angle : none
 float verticalAngle = 0.0f;
 // Initial Field of View
 float initialFoV = 45.0f;
 
-float speed = 3.0f; // 3 units / second
+float speed = 10.0f; // units / second
 float mouseSpeed = 0.005f;
 
 
 
 void computeMatricesFromInputs(){
+  static double xpos, ypos;
 
   // glfwGetTime is called only once, the first time this function is called
   static double lastTime = glfwGetTime();
+  if (lastTime < 1.0f)
+    glfwSetCursorPos(window, 0, 0);
 
   // Compute time difference between current and last frame
   double currentTime = glfwGetTime();
   float deltaTime = float(currentTime - lastTime);
 
   // Get mouse position
-  double xpos, ypos;
   glfwGetCursorPos(window, &xpos, &ypos);
+  // if (xpos + ypos != 0)
+  // {
+  //   printf("%g %g\n", xpos, ypos);
+  // }
 
   // Reset mouse position for next frame
-  glfwSetCursorPos(window, 1024/2, 768/2);
+  glfwSetCursorPos(window, 0, 0);
 
   // Compute new orientation
-  horizontalAngle += mouseSpeed * float(1024/2 - xpos );
-  verticalAngle   += mouseSpeed * float( 768/2 - ypos );
+  horizontalAngle += mouseSpeed * float(-xpos);
+  verticalAngle   += mouseSpeed * float(-ypos);
   // printf("H:%g V:%g\n", horizontalAngle, verticalAngle);
 
   // Direction : Spherical coordinates to Cartesian coordinates conversion
