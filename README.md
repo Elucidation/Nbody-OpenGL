@@ -2,6 +2,7 @@
 ---
 This is a sandbox for practicing OpenGL using [GLFW](http://www.glfw.org)
 
+![Spinning Triangle](spinning_triangle.gif)
 
 This branch has a basic spinning triangle example using OpenGL and GLFW
 
