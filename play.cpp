@@ -136,6 +136,11 @@ int main(int argc, char const *argv[])
     // Wrap up
     glfwDestroyWindow(window);
 
+    // Cleanup VBO and shader
+    glDeleteBuffers(1, &vertexbuffer);
+    glDeleteProgram(programID);
+    glDeleteVertexArrays(1, &VertexArrayID);
+
     glfwTerminate();
     exit(EXIT_SUCCESS);
 }
