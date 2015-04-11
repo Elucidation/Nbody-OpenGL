@@ -191,6 +191,8 @@ int main(int argc, char const *argv[])
     double lastTime = glfwGetTime();
     int nbFrames = 0;
 
+    printf("Use Arrow Keys and Mouse to move, Esc to cancel\n");
+
     while (!glfwWindowShouldClose(window))
     {
         // Measure speed

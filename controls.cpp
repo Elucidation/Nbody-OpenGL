@@ -38,16 +38,24 @@ float mouseSpeed = 0.005f;
 
 void computeMatricesFromInputs(){
 
+  static double xpos = 1024/2, ypos = 768/2;
   // glfwGetTime is called only once, the first time this function is called
   static double lastTime = glfwGetTime();
+  
 
   // Compute time difference between current and last frame
   double currentTime = glfwGetTime();
   float deltaTime = float(currentTime - lastTime);
 
   // Get mouse position
-  double xpos, ypos;
-  glfwGetCursorPos(window, &xpos, &ypos);
+  if (glfwGetTime() < 1.0f)
+  {
+    glfwSetCursorPos(window, 1024/2, 768/2);
+  }
+  else
+  {
+    glfwGetCursorPos(window, &xpos, &ypos);
+  }
 
   // Reset mouse position for next frame
   glfwSetCursorPos(window, 1024/2, 768/2);
