@@ -1,23 +1,144 @@
-
+// Standard Headers
 #include <stdio.h>
 #include <stdlib.h>
+
+// GLEW
 #include <GL/glew.h>
+
+// GLFW
 #include <GLFW/glfw3.h>
 
-
+// GLM
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp> 
 #include <glm/ext.hpp>
-// #include <glm/gtc/matrix_transform.hpp>
-// #include <glm/gtx/transform.hpp> 
-// #include <glm/transform.hpp>
-// Use #include <glm/gtc/matrix_transform.hpp> and #include <glm/gtx/transform.hpp>
-
-
 using namespace glm;
 
+// Shader
 #include "loadShader.cpp"
 
+// Functions
+void error_callback(int error, const char* description);
+static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+GLFWwindow* setupGL();
+void initGlew();
+
+int main(int argc, char const *argv[])
+{
+    // Setup
+    GLFWwindow* window = setupGL();
+
+    glfwMakeContextCurrent(window);
+
+    // Initialize GLEW
+    initGlew();
+
+    // Set update rate & keyboard callbacks
+    glfwSwapInterval(1);
+    glfwSetKeyCallback(window, key_callback);
+
+    // Dark blue background
+    glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
+
+    // Set up arrays
+    // Do this once your window is created (= after the OpenGL Context creation)
+    // and before any other OpenGL call.
+    GLuint VertexArrayID;
+    glGenVertexArrays(1, &VertexArrayID);
+    glBindVertexArray(VertexArrayID);
+
+    // Create and compile our GLSL program from the shaders
+    GLuint programID = LoadShaders("BasicVertexShader.vert", 
+                                   "BasicFragmentShader.frag");
+
+    // Get a handle for our "MVP" uniform.
+    // Only at initialisation time.
+    GLuint MatrixID = glGetUniformLocation(programID, "MVP");
+
+    // glm::mat4 translateMat = glm::translate(glm::mat4(1.0f), glm::vec3(10.0f,0.f,0.f));
+    // glm::mat4 rotateMat = glm::rotate(glm::mat4(1.0f), glm::half_pi<float>(), glm::vec3(1.0f,0.f,0.f));
+    // glm::mat4 scaleMat = glm::scale(glm::mat4(1.0f), glm::vec3(2.0f));
+    // glm::mat4 modelMat = translateMat * rotateMat * scaleMat;
+    
+    glm::vec3 cameraPos = glm::vec3(4.0f, 3.f,3.0f);
+    glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f,0.0f);
+    glm::mat4 viewMatrix = glm::lookAt(cameraPos, cameraTarget, glm::vec3(0.0f,1.0f,0.0f));
+
+    float FoV = glm::radians<float>(45);
+
+    glm::mat4 projectionMatrix = glm::perspective(
+        FoV,         // The horizontal Field of View, in degrees : the amount of "zoom". Think "camera lens". Usually between 90° (extra wide) and 30° (quite zoomed in)
+        4.0f / 3.0f, // Aspect Ratio. Depends on the size of your window. Notice that 4/3 == 800/600 == 1280/960, sounds familiar ?
+        0.1f,        // Near clipping plane. Keep as big as possible, or you'll get precision issues.
+        100.0f       // Far clipping plane. Keep as little as possible.
+    );
+
+    // Model matrix : an identity matrix (model will be at the origin)
+    glm::mat4 modelMat = glm::mat4(1.0f);  // Changes for each model !
+
+    // C++ : compute the matrix (inverted)
+    glm::mat4 MVPmatrix = projectionMatrix * viewMatrix * modelMat; // Remember : inverted !; 
+
+    printf("Model Matrix: %s\n", to_string(MVPmatrix).c_str());
+
+    // An array of 3 vectors which represents 3 vertices
+    static const GLfloat g_vertex_buffer_data[] = {
+       -1.0f, -1.0f, 0.0f,
+       1.0f, -1.0f, 0.0f,
+       0.0f,  1.0f, 0.0f,
+    };
+
+    //////////////////////////////////
+    // Set up vertex Buffer
+    // This will identify our vertex buffer
+    GLuint vertexbuffer;
+     
+    // Generate 1 buffer, put the resulting identifier in vertexbuffer
+    glGenBuffers(1, &vertexbuffer);
+    // The following commands will talk about our 'vertexbuffer' buffer
+    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+    // Give our vertices to OpenGL.
+    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), 
+                 g_vertex_buffer_data, GL_STATIC_DRAW);
+
+    while (!glfwWindowShouldClose(window))
+    {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // Use our shader
+        glUseProgram(programID);
+
+        // Send our transformation to the currently bound shader,
+        // in the "MVP" uniform
+        glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVPmatrix[0][0]);
+
+        // 1st attribute buffer : vertices
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+        glVertexAttribPointer(
+           0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
+           3,                  // size
+           GL_FLOAT,           // type
+           GL_FALSE,           // normalized?
+           0,                  // stride
+           (void*)0            // array buffer offset
+        );
+         
+        // Draw the triangle !
+        glDrawArrays(GL_TRIANGLES, 0, 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
+         
+        glDisableVertexAttribArray(0);
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    // Wrap up
+    glfwDestroyWindow(window);
+
+    glfwTerminate();
+    exit(EXIT_SUCCESS);
+}
 
 
 void error_callback(int error, const char* description)
@@ -80,128 +201,3 @@ void initGlew()
         exit(EXIT_FAILURE);
     }
 }
-
-int main(int argc, char const *argv[])
-{
-    // Setup
-    GLFWwindow* window = setupGL();
-
-
-    // The meat
-    glfwMakeContextCurrent(window);
-    initGlew();
-    glfwSwapInterval(1);
-    glfwSetKeyCallback(window, key_callback);
-
-    /////////////////////////////////
-    // Set up arrays
-    // Do this once your window is created (= after the OpenGL Context creation)
-    // and before any other OpenGL call.
-    GLuint VertexArrayID;
-    glGenVertexArrays(1, &VertexArrayID);
-    glBindVertexArray(VertexArrayID);
-
-    // An array of 3 vectors which represents 3 vertices
-    static const GLfloat g_vertex_buffer_data[] = {
-       -1.0f, -1.0f, 0.0f,
-       1.0f, -1.0f, 0.0f,
-       0.0f,  1.0f, 0.0f,
-    };
-
-    glm::mat4 translateMat = glm::translate(glm::mat4(1.0f), glm::vec3(10.0f,0.f,0.f));
-    glm::mat4 rotateMat = glm::rotate(glm::mat4(1.0f), glm::half_pi<float>(), glm::vec3(1.0f,0.f,0.f));
-    glm::mat4 scaleMat = glm::scale(glm::mat4(1.0f), glm::vec3(2.0f));
-
-
-
-    glm::vec4 myVector(5.0f, 6.0f, 7.0f, 1.0f);
-
-    // T * R * S * V order
-    glm::vec4 transformedVector = translateMat * rotateMat * scaleMat * myVector; 
-
-    printf("Vector: %s\n", to_string(myVector).c_str());
-    printf("T Matrix: %s\n", to_string(translateMat).c_str());
-    printf("R Matrix: %s\n", to_string(rotateMat).c_str());
-    printf("S Matrix: %s\n", to_string(scaleMat).c_str());
-    printf("Transformed Vector: %s\n", to_string(transformedVector).c_str());
-
-
-    //////////////////////////////////
-    // Set up vertex Buffer
-    // This will identify our vertex buffer
-    GLuint vertexbuffer;
-     
-    // Generate 1 buffer, put the resulting identifier in vertexbuffer
-    glGenBuffers(1, &vertexbuffer);
-     
-    // The following commands will talk about our 'vertexbuffer' buffer
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-     
-    // Give our vertices to OpenGL.
-    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
-
-    // Create and compile our GLSL program from the shaders
-    GLuint programID = LoadShaders("BasicVertexShader.vert", 
-                                   "BasicFragmentShader.frag");
-
-    while (!glfwWindowShouldClose(window))
-    {
-        // Keep running
-        // float ratio;
-        // int width, height;
-        // glfwGetFramebufferSize(window, &width, &height);
-        // ratio = width / (float) height;
-
-        // glViewport(0, 0, width, height);
-        // glClear(GL_COLOR_BUFFER_BIT);
-
-        // glMatrixMode(GL_PROJECTION);
-        // glLoadIdentity();
-        // glOrtho(-ratio, ratio, -1.f, 1.f, 1.f, -1.f);
-        // glMatrixMode(GL_MODELVIEW);
-        // glLoadIdentity();
-        // glRotatef((float) glfwGetTime() * 50.f, 0.f, 0.f, 1.f);
-        // glBegin(GL_TRIANGLES);
-        // glColor3f(1.f, 0.f, 0.f);
-        // glVertex3f(-0.6f, -0.4f, 0.f);
-        // glColor3f(0.f, 1.f, 0.f);
-        // glVertex3f(0.6f, -0.4f, 0.f);
-        // glColor3f(0.f, 0.f, 1.f);
-        // glVertex3f(0.f, 0.6f, 0.f);
-        // glEnd();
-
-        // double gTime = glfwGetTime();
-        // printf("Hi there again at time %g\n", gTime);
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // Use our shader
-        glUseProgram(programID);
-
-        // 1st attribute buffer : vertices
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-        glVertexAttribPointer(
-           0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-           3,                  // size
-           GL_FLOAT,           // type
-           GL_FALSE,           // normalized?
-           0,                  // stride
-           (void*)0            // array buffer offset
-        );
-         
-        // Draw the triangle !
-        glDrawArrays(GL_TRIANGLES, 0, 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
-         
-        glDisableVertexAttribArray(0);
-
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-    }
-
-    // Wrap up
-    glfwDestroyWindow(window);
-
-    glfwTerminate();
-    exit(EXIT_SUCCESS);
-}   
