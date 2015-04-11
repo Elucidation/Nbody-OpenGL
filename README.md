@@ -1,10 +1,10 @@
 # Play
 ---
 
-**WARNING MASTER BRANCH IS EXPERIMENTAL AND WILL PROBABLY BREAK**
+**Textured Box Example with slowly moving camera**
 
-This is a sandbox for practicing OpenGL using [GLFW](http://www.glfw.org).
-Check the other branches for working examples
+![Box](box.png)
+
 
 Following the tutorials at [opengl-tutorials](http://www.opengl-tutorial.org/beginners-tutorials/tutorial-4-a-colored-cube/)
 
