@@ -6,6 +6,7 @@ extern GLFWwindow* window; // The "extern" keyword here is to access the variabl
 // Include GLM
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
+#include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 using namespace glm;
 
@@ -23,7 +24,7 @@ glm::mat4 getProjectionMatrix(){
 
 
 // Initial position : on +Z
-glm::vec3 position = glm::vec3( 0, 0, -5 ); 
+glm::vec3 position = glm::vec3( 0, 0, 0 ); 
 // Initial horizontal angle : toward -Z
 float horizontalAngle = -3.14f;
 // Initial vertical angle : none
@@ -50,10 +51,11 @@ void computeMatricesFromInputs(){
 
   // Get mouse position
   glfwGetCursorPos(window, &xpos, &ypos);
-  // if (xpos + ypos != 0)
-  // {
-  //   printf("%g %g\n", xpos, ypos);
-  // }
+  // printf("%g %g\n", xpos, ypos);
+  if (xpos < -100.0f ) { xpos = -100.0f; }
+  else if (xpos > 100.0f ) { xpos = 100.0f; }
+  if (ypos < -100.0f ) { ypos = -100.0f; }
+  else if (ypos > 100.0f ) { ypos = 100.0f; }
 
   // Reset mouse position for next frame
   glfwSetCursorPos(window, 0, 0);
@@ -61,7 +63,17 @@ void computeMatricesFromInputs(){
   // Compute new orientation
   horizontalAngle += mouseSpeed * float(-xpos);
   verticalAngle   += mouseSpeed * float(-ypos);
-  // printf("H:%g V:%g\n", horizontalAngle, verticalAngle);
+  if (horizontalAngle > 2.0*pi<float>())
+    horizontalAngle -= 2.0*pi<float>();
+  else if (horizontalAngle < -2.0*pi<float>())
+    horizontalAngle += 2.0*pi<float>();
+
+  if (verticalAngle > half_pi<float>())
+    verticalAngle = half_pi<float>();
+  else if (verticalAngle < -half_pi<float>())
+    verticalAngle = -half_pi<float>();
+
+  // printf("H:%g V:%g S:%g\n", horizontalAngle, verticalAngle);
 
   // Direction : Spherical coordinates to Cartesian coordinates conversion
   glm::vec3 direction(

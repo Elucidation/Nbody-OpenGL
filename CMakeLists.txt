@@ -22,7 +22,7 @@ find_package(OpenGL REQUIRED)
 if(NOT OPENGL_FOUND)
     message("ERROR: OpenGL not found")
 endif(NOT OPENGL_FOUND)
-set(GL_LIBRARY GL GLU X11)
+set(GL_LIBRARY GL GLU X11 Xi Xrandr Xcursor Xxf86vm pthread Xinerama Xft)
 
 # Create Shader/Texture/Controls libraries
 add_library(Shader loadShader.cpp loadShader.hpp)
