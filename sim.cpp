@@ -243,3 +243,22 @@ void createNewParticles(unsigned long ParticlesCount, double delta)
         }
     }
 }
+
+// Euler integration
+unsigned long simulateEuler(double dt)
+{
+    unsigned long numForceCalcs= calculateAccelerations();
+    updatePositionsVelocities(dt);
+    return numForceCalcs;
+}
+
+// Leapfrog integration
+unsigned long simulateLeapfrog(double dt)
+{
+    updatePositions(0.5*dt);
+    unsigned long numForceCalcs= calculateAccelerations();
+    updateVelocities(dt);
+    updatePositions(0.5*dt);
+
+    return numForceCalcs;
+}

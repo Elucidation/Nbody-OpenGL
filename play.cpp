@@ -61,10 +61,8 @@ int main(int argc, char const *argv[])
         createNewParticles(ParticlesCount, dt);
 
         // Simulate all particles
-        unsigned long numForceCalcs = calculateAccelerations();
-        updatePositionsVelocities(dt);
-
-        updatePositionColorBuffer(g_particle_position_size_data, g_particle_color_data, CameraPosition);
+        // unsigned long numForceCalcs = simulateEuler(dt);
+        unsigned long numForceCalcs = simulateLeapfrog(dt);
 
         double simDelta = glfwGetTime() - currentTime;
 
@@ -77,6 +75,8 @@ int main(int argc, char const *argv[])
         ///////////////////////////////////
         // GRAPHICS UPDATE
         currentTime = glfwGetTime();
+
+        updatePositionColorBuffer(g_particle_position_size_data, g_particle_color_data, CameraPosition);
 
         updateGfx(programID, g_particle_position_size_data, g_particle_color_data,
                   &CameraPosition, ParticlesCount);
