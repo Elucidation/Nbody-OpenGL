@@ -3,10 +3,10 @@
 #define SCREEN_HEIGHT 1200
 
 GLuint VertexArrayID;
-GLuint programID;
+GLuint billboardProgramID;
 GLuint CameraRight_worldspace_ID;
 GLuint CameraUp_worldspace_ID;
-GLuint ViewProjMatrixID;
+GLuint BillboardViewProjMatrixID;
 GLuint TextureID;
 GLuint Texture;
 GLuint billboard_vertex_buffer;
@@ -16,11 +16,34 @@ GLuint particles_color_buffer;
 static GLfloat* g_particle_position_size_data;
 static GLubyte* g_particle_color_data;
 
+///
+GLuint quadProgramID;
+GLuint QuadViewProjMatrixID;
+GLuint line_position_buffer;
+GLuint line_color_buffer;
+static GLfloat* testParticles;
+static GLubyte* testColors; 
+const unsigned int specialCount = 5;
+///
+void drawParticles(GLubyte* g_particle_color_data, unsigned long ParticlesCount);
+void drawTest();
 
-void updateGfx(GLuint programID, GLfloat* g_particle_position_size_data, GLubyte* g_particle_color_data,
-               glm::vec3* CameraPosition, unsigned long ParticlesCount)
+void updateGfx(GLfloat* g_particle_position_size_data, 
+    GLubyte* g_particle_color_data, unsigned long ParticlesCount)
 {
+  // Clear the screen
+  // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+  drawParticles(g_particle_color_data, ParticlesCount);
+  drawTest();
+
+  // Swap buffers
+  glfwSwapBuffers(window);
+  glfwPollEvents();
+}
+
+void drawParticles(GLubyte* g_particle_color_data, unsigned long ParticlesCount)
+{
   glm::mat4 ProjectionMatrix = getProjectionMatrix();
   glm::mat4 ViewMatrix = getViewMatrix();
   
@@ -44,7 +67,7 @@ void updateGfx(GLuint programID, GLfloat* g_particle_position_size_data, GLubyte
 
 
   // Use our shader
-  glUseProgram(programID);
+  glUseProgram(billboardProgramID);
 
   // Bind texture to Texture Unit 0
   glActiveTexture(GL_TEXTURE0);
@@ -54,7 +77,7 @@ void updateGfx(GLuint programID, GLfloat* g_particle_position_size_data, GLubyte
   glUniform3f(CameraRight_worldspace_ID, ViewMatrix[0][0], ViewMatrix[1][0], ViewMatrix[2][0]);
   glUniform3f(CameraUp_worldspace_ID   , ViewMatrix[0][1], ViewMatrix[1][1], ViewMatrix[2][1]);
   
-  glUniformMatrix4fv(ViewProjMatrixID, 1, GL_FALSE, &ViewProjectionMatrix[0][0]);
+  glUniformMatrix4fv(BillboardViewProjMatrixID, 1, GL_FALSE, &ViewProjectionMatrix[0][0]);
 
   
 
@@ -109,15 +132,76 @@ void updateGfx(GLuint programID, GLfloat* g_particle_position_size_data, GLubyte
   // but faster.
   glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, ParticlesCount);
 
-   
   glDisableVertexAttribArray(0);
   glDisableVertexAttribArray(1);
   glDisableVertexAttribArray(2);
-
-  // Swap buffers
-  glfwSwapBuffers(window);
-  glfwPollEvents();
 }
+
+void drawTest()
+{
+  glm::mat4 ProjectionMatrix = getProjectionMatrix();
+  glm::mat4 ViewMatrix = getViewMatrix();
+  
+  glm::mat4 ViewProjectionMatrix = ProjectionMatrix * ViewMatrix;    
+
+  // Update the buffers that OpenGL uses for rendering.
+  // There are much more sophisticated means to stream data from the CPU to the GPU, 
+  // but this is outside the scope of this tutorial.
+  // http://www.opengl.org/wiki/Buffer_Object_Streaming
+  glBindBuffer(GL_ARRAY_BUFFER, line_position_buffer);
+  glBufferData(GL_ARRAY_BUFFER, specialCount * 4 * sizeof(GLfloat), NULL, GL_STREAM_DRAW); // Buffer orphaning, a common way to improve streaming perf. See above link for details.
+  glBufferSubData(GL_ARRAY_BUFFER, 0, specialCount * sizeof(GLfloat) * 4, testParticles);
+
+  glBindBuffer(GL_ARRAY_BUFFER, line_color_buffer);
+  glBufferData(GL_ARRAY_BUFFER, specialCount * 4 * sizeof(GLubyte), NULL, GL_STREAM_DRAW); // Buffer orphaning, a common way to improve streaming perf. See above link for details.
+  glBufferSubData(GL_ARRAY_BUFFER, 0, specialCount * sizeof(GLubyte) * 4, testColors);
+
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+
+  // Use our shader
+  glUseProgram(quadProgramID);
+
+  glUniformMatrix4fv(QuadViewProjMatrixID, 1, GL_FALSE, &ViewProjectionMatrix[0][0]);
+
+  // 1st attribute buffer : positions
+  glEnableVertexAttribArray(0);
+  glBindBuffer(GL_ARRAY_BUFFER, line_position_buffer);
+  glVertexAttribPointer(
+      0,                                // attribute. No particular reason for 0, but must match the layout in the shader.
+      4,                                // size : x + y + z + size => 4
+      GL_FLOAT,                         // type
+      GL_FALSE,                         // normalized?
+      0,                                // stride
+      (void*)0                          // array buffer offset
+  );
+
+  // 2nd attribute buffer : colors
+  glEnableVertexAttribArray(1);
+  glBindBuffer(GL_ARRAY_BUFFER, line_color_buffer);
+  glVertexAttribPointer(
+      1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
+      4,                                // size : r + g + b + a => 4
+      GL_UNSIGNED_BYTE,                 // type
+      GL_TRUE,                          // normalized?    *** YES, this means that the unsigned char[4] will be accessible with a vec4 (floats) in the shader ***
+      0,                                // stride
+      (void*)0                          // array buffer offset
+  );
+
+  // no divisors
+  glVertexAttribDivisor(0, 0);
+  glVertexAttribDivisor(1, 0);
+
+  glDrawArrays(GL_LINE_STRIP, 0, specialCount);
+
+  glDisableVertexAttribArray(0);
+  glDisableVertexAttribArray(1);
+}
+
+void drawBox()
+{}
 
 void error_callback(int error, const char* description)
 {
@@ -218,16 +302,16 @@ void initGfx()
     glBindVertexArray(VertexArrayID);   
 
     // Create and compile our GLSL program from the shaders
-    programID = LoadShaders("BasicVertexShader.vert", 
+    billboardProgramID = LoadShaders("BasicVertexShader.vert", 
                                    "BasicFragmentShader.frag");
 
     // Vertex shader
-    CameraRight_worldspace_ID  = glGetUniformLocation(programID, "CameraRight_worldspace");
-    CameraUp_worldspace_ID  = glGetUniformLocation(programID, "CameraUp_worldspace");
-    ViewProjMatrixID = glGetUniformLocation(programID, "VP");
+    CameraRight_worldspace_ID  = glGetUniformLocation(billboardProgramID, "CameraRight_worldspace");
+    CameraUp_worldspace_ID  = glGetUniformLocation(billboardProgramID, "CameraUp_worldspace");
+    BillboardViewProjMatrixID = glGetUniformLocation(billboardProgramID, "VP");
 
     // Fragment shader
-    TextureID  = glGetUniformLocation(programID, "myTextureSampler");
+    TextureID  = glGetUniformLocation(billboardProgramID, "myTextureSampler");
 
     g_particle_position_size_data = new GLfloat[MaxParticles * 4];
     g_particle_color_data         = new GLubyte[MaxParticles * 4];
@@ -249,7 +333,6 @@ void initGfx()
           0.5f,  0.5f, 0.0f,
     };
 
-    billboard_vertex_buffer;
     // Generate 1 buffer, put the resulting identifier in billboard_vertex_buffer
     glGenBuffers(1, &billboard_vertex_buffer);
     // The following commands will talk about our 'billboard_vertex_buffer' buffer
@@ -259,16 +342,107 @@ void initGfx()
                  g_vertex_buffer_data, GL_STATIC_DRAW);
 
     // The VBO containing the positions and sizes of the particles
-    particles_position_buffer;
     glGenBuffers(1, &particles_position_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, particles_position_buffer);
     // Initialize with empty (NULL) buffer : it will be updated later, each frame.
     glBufferData(GL_ARRAY_BUFFER, MaxParticles * 4 * sizeof(GLfloat), NULL, GL_STREAM_DRAW);
 
     // The VBO containing the colors of the particles
-    particles_color_buffer;
     glGenBuffers(1, &particles_color_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, particles_color_buffer);
     // Initialize with empty (NULL) buffer : it will be updated later, each frame.
     glBufferData(GL_ARRAY_BUFFER, MaxParticles * 4 * sizeof(GLubyte), NULL, GL_STREAM_DRAW);
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// Shader #2
+    quadProgramID = LoadShaders("lineShader.vert", 
+                                "lineShader.frag");
+
+    QuadViewProjMatrixID = glGetUniformLocation(quadProgramID, "VP");
+
+    // The VBO containing the positions and sizes of the particles
+    glGenBuffers(1, &line_position_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, line_position_buffer);
+    // Initialize with empty (NULL) buffer : it will be updated later, each frame.
+    glBufferData(GL_ARRAY_BUFFER, specialCount * 4 * sizeof(GLfloat), NULL, GL_STREAM_DRAW);
+
+    // The VBO containing the colors of the particles
+    glGenBuffers(1, &line_color_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, line_color_buffer);
+    // Initialize with empty (NULL) buffer : it will be updated later, each frame.
+    glBufferData(GL_ARRAY_BUFFER, specialCount * 4 * sizeof(GLubyte), NULL, GL_STREAM_DRAW);
+ 
+    testParticles = new GLfloat[specialCount * 4];
+    testParticles[0] = 0;
+    testParticles[1] = 1;
+    testParticles[2] = -20.0f;
+    testParticles[3] = 0.6;
+
+    testParticles[4+0] = 0;
+    testParticles[4+1] = 0;
+    testParticles[4+2] = -20.0f;
+    testParticles[4+3] = 0.6;
+
+    testParticles[2*4+0] = 1;
+    testParticles[2*4+1] = 0;
+    testParticles[2*4+2] = -20.0f;
+    testParticles[2*4+3] = 0.6;
+
+    testParticles[3*4+0] = 0;
+    testParticles[3*4+1] = 0;
+    testParticles[3*4+2] = -20.0f;
+    testParticles[3*4+3] = 0.6;
+
+    testParticles[4*4+0] = 0;
+    testParticles[4*4+1] = 0;
+    testParticles[4*4+2] = -20.0f+1;
+    testParticles[4*4+3] = 0.6;
+
+    testColors = new GLubyte[specialCount * 4];
+    testColors[0] = 255;
+    testColors[1] = 0;
+    testColors[2] = 0;
+    testColors[3] = 255;
+
+    testColors[4+0] = 255;
+    testColors[4+1] = 255;
+    testColors[4+2] = 255;
+    testColors[4+3] = 255;
+    
+    testColors[2*4+0] = 0;
+    testColors[2*4+1] = 0;
+    testColors[2*4+2] = 255;
+    testColors[2*4+3] = 255;
+
+    testColors[3*4+0] = 255;
+    testColors[3*4+1] = 255;
+    testColors[3*4+2] = 255;
+    testColors[3*4+3] = 255;
+
+    testColors[4*4+0] = 0;
+    testColors[4*4+1] = 255;
+    testColors[4*4+2] = 0;
+    testColors[4*4+3] = 255;
+
+}
+
+void gfxCleanup()
+{
+  glfwDestroyWindow(window);
+
+  delete[] g_particle_position_size_data;
+  delete[] g_particle_color_data;
+
+  // Cleanup VBO and shader
+  glDeleteBuffers(1, &particles_color_buffer);
+  glDeleteBuffers(1, &particles_position_buffer);
+  glDeleteBuffers(1, &line_position_buffer);
+  glDeleteBuffers(1, &line_color_buffer);
+  glDeleteBuffers(1, &billboard_vertex_buffer);
+  glDeleteProgram(billboardProgramID);
+  glDeleteProgram(quadProgramID);
+  glDeleteTextures(1, &Texture);
+  glDeleteVertexArrays(1, &VertexArrayID);
+
+  glfwTerminate();
 }

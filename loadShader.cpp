@@ -11,7 +11,8 @@ using namespace glm;
 #include "loadShader.hpp"
 
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path){
- 
+
+    printf("--- LOADING %s %s---\n", vertex_file_path, fragment_file_path);
     // Create the shaders
     GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
     GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
@@ -26,6 +27,10 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
             VertexShaderCode += "\n" + Line;
         VertexShaderStream.close();
     }
+    else
+    {
+        printf("ERROR : Could not open Vertex Shader!\n");
+    }
  
     // Read the Fragment Shader code from the file
     std::string FragmentShaderCode;
@@ -35,6 +40,10 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
         while(getline(FragmentShaderStream, Line))
             FragmentShaderCode += "\n" + Line;
         FragmentShaderStream.close();
+    }
+    else
+    {
+        printf("ERROR : Could not open Fragment Shader!\n");
     }
  
     GLint Result = GL_FALSE;
@@ -82,6 +91,8 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
  
     glDeleteShader(VertexShaderID);
     glDeleteShader(FragmentShaderID);
+
+    printf("--- END %s %s---\n", vertex_file_path, fragment_file_path);
  
     return ProgramID;
 }

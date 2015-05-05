@@ -14,6 +14,7 @@ GLFWwindow* window; // Needed by controls.cpp
 #include <glm/glm.hpp> 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/norm.hpp>
+#include <glm/gtx/string_cast.hpp>
 using namespace glm;
 
 #include "loadShader.hpp" // Shader
@@ -21,6 +22,7 @@ using namespace glm;
 #include "controls.hpp" // Controls
 #include "sim.cpp" // Sim (contains N count etc.)
 #include "gfx.cpp" // Graphics call
+#include "octree.cpp" // Octree
 
 int main(int argc, char const *argv[])
 {
@@ -78,8 +80,7 @@ int main(int argc, char const *argv[])
 
         updatePositionColorBuffer(g_particle_position_size_data, g_particle_color_data, CameraPosition);
 
-        updateGfx(programID, g_particle_position_size_data, g_particle_color_data,
-                  &CameraPosition, ParticlesCount);
+        updateGfx(g_particle_position_size_data, g_particle_color_data, ParticlesCount);
 
         double gfxDelta = glfwGetTime() - currentTime;
 
@@ -88,26 +89,17 @@ int main(int argc, char const *argv[])
         if ( glfwGetTime() - lastFPStime >= 1.0 ){ // If last prinf() was more than 1 sec ago
             // printf and reset timer
             printf("%04.4f ms/frame \t (N: %.2fK, CALC: %10ld) \t|\t [%03.2f ms/sim, %03.2f ms/sort, %03.2f ms/gfx]\n", 1000.0/double(nbFrames), (double)(ParticlesCount)/1000.0, numForceCalcs, simDelta*1000.0, sortDelta*1000.0, gfxDelta*1000.0);
+
+            // Bounds b = calculateBounds();
+            // printf("Bounds: %s - %s\n", to_string(b.min).c_str(), to_string(b.max).c_str());
             nbFrames = 0;
             lastFPStime += 1.0f;
         }
     }
 
     // Wrap up
-    glfwDestroyWindow(window);
+    gfxCleanup();
 
-    delete[] g_particle_position_size_data;
-    delete[] g_particle_color_data;
-
-    // Cleanup VBO and shader
-    glDeleteBuffers(1, &particles_color_buffer);
-    glDeleteBuffers(1, &particles_position_buffer);
-    glDeleteBuffers(1, &billboard_vertex_buffer);
-    glDeleteProgram(programID);
-    glDeleteTextures(1, &Texture);
-    glDeleteVertexArrays(1, &VertexArrayID);
-
-    glfwTerminate();
     exit(EXIT_SUCCESS);
 }
 

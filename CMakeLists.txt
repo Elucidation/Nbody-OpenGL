@@ -42,6 +42,8 @@ target_link_libraries(play ${GLFW_LIBRARIES} ${GL_LIBRARY} ${COMMON})
 # Copy shaders over
 configure_file(BasicVertexShader.vert BasicVertexShader.vert COPYONLY)
 configure_file(BasicFragmentShader.frag BasicFragmentShader.frag COPYONLY)
+configure_file(lineShader.vert lineShader.vert COPYONLY)
+configure_file(lineShader.frag lineShader.frag COPYONLY)
 
 # Copy textures over
 # configure_file(uvtemplate.bmp uvtemplate.bmp COPYONLY)
