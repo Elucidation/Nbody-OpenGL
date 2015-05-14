@@ -8,16 +8,17 @@ struct Bounds
 
 class Octree
 {
-    Bounds* bbox;
+    Bounds bbox;
+public:
     bool interior;
     Particle* p;
     Octree* children[8];
 
-public:
     Octree() {
-        bbox = new Bounds();
+        // Bounds bbox;
 
         // Start off as a leaf node with no data
+        interior = false;
 
         // Initially no children
         for (int i = 0; i < 8; ++i)
@@ -28,28 +29,26 @@ public:
     Octree(glm::vec3 center, glm::vec3 half_width) {
         Octree();
         
-        // bbox = new Bounds();
         // Set up bbox with given values
-        bbox->center = center;
-        bbox->half_width = half_width;
-
-        // // Initially no children
-        // for (int i = 0; i < 8; ++i)
-        // {
-        //     children[i] = NULL;
-        // }
+        bbox.center = center;
+        bbox.half_width = half_width;
     };
 
     ~Octree();
 
-    Bounds* getBounds()
+    Bounds& getBounds()
     {
         return bbox;
     }
 
-    bool isInBounds(glm::vec3 point)
+    void setBounds(Bounds& b)
     {
-        return glm::all(glm::lessThan(glm::abs(point - bbox->center), bbox->half_width));
+        bbox = b;
+    }
+
+    bool isInBounds(const glm::vec3 point)
+    {
+        return glm::all(glm::lessThan(glm::abs(point - bbox.center), bbox.half_width));
     }
 
     // octree is interior node (has children) or leaf node (no children/unsplit)
@@ -67,6 +66,18 @@ public:
     // otree.findChildIndex(glm::vec3 point)
     //      returns idx 0-7 for correct quadrant
 
+    int getChildIndex(const glm::vec3& point)
+    {
+        int idx = 0;
+        // quadrants from -x,-y,-z to x,y,z
+        if (point.x >= bbox.center.x)
+            idx |= 1 << 2;
+        if (point.y >= bbox.center.y)
+            idx |= 1 << 1;
+        if (point.z >= bbox.center.z)
+            idx |= 1 << 0;
+        return idx;
+    }
 };
 
 

@@ -40,8 +40,10 @@ const unsigned int maxLinePoints = 16; // 12 lines to a box, 4 overlapping for s
 ///
 void drawParticles(GLubyte* g_particle_color_data, unsigned long ParticlesCount);
 void drawOrigin();
-void drawBounds(Bounds* box, const GLubyte* color);
-void drawBox(glm::vec3 bmin, glm::vec3 bmax, const GLubyte* color);
+void drawBounds(const Bounds& bbox, const GLubyte* color);
+void drawBox(const glm::vec3 bmin, const glm::vec3 bmax, const GLubyte* color);
+void drawTree(Octree* root);
+
 
 void updateGfx(GLfloat* g_particle_position_size_data, 
     GLubyte* g_particle_color_data, unsigned long ParticlesCount, Octree* oct)
@@ -52,9 +54,8 @@ void updateGfx(GLfloat* g_particle_position_size_data,
   drawParticles(g_particle_color_data, ParticlesCount);
   drawOrigin();
 
-  static const GLubyte color[] = {0, 255, 0, 255};
-  Bounds* b = calculateMainBounds(); //bbox of all particles
-  drawBounds(b, color);
+  // Draw Oct-tree 
+  drawTree(oct);
 
   // Swap buffers
   glfwSwapBuffers(window);
@@ -219,15 +220,28 @@ void drawOrigin()
   glDisableVertexAttribArray(1);
 }
 
-void drawBounds(Bounds* bbox, const GLubyte* color)
+void drawTree(Octree* root)
 {
-  glm::vec3 bmin = bbox->center - bbox->half_width;
-  glm::vec3 bmax = bbox->center + bbox->half_width;
+  static const GLubyte color[] = {0, 255, 0, 255};
+  drawBounds(root->getBounds(), color);
+  if (root->interior)
+  {
+    for (int i = 0; i < 8; ++i)
+    {
+      drawTree(root->children[i]);
+    }
+  }
+}
+
+void drawBounds(const Bounds& bbox, const GLubyte* color)
+{
+  glm::vec3 bmin = bbox.center - bbox.half_width;
+  glm::vec3 bmax = bbox.center + bbox.half_width;
   drawBox(bmin, bmax, color);
 }
 
 // Box min, box max points
-void drawBox(glm::vec3 bmin, glm::vec3 bmax, const GLubyte* color)
+void drawBox(const glm::vec3 bmin, const glm::vec3 bmax, const GLubyte* color)
 {
   glm::mat4 ProjectionMatrix = getProjectionMatrix();
   glm::mat4 ViewMatrix = getViewMatrix();
