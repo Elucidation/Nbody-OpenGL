@@ -64,9 +64,8 @@ void updateGfx(GLfloat* g_particle_position_size_data,
 {
   // Clear the screen
   // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-  // Color particles based on oct-tree quadrant
-  colorParticles(oct);
+  
+  // colorParticles(oct); // Color particles based on oct-tree quadrant
 
   drawParticles(g_particle_color_data, ParticlesCount);
   drawOrigin();

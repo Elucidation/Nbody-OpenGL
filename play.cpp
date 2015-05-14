@@ -11,6 +11,7 @@ GLFWwindow* window; // Needed by controls.cpp
 
 // GLM
 #define GLM_FORCE_RADIANS
+#define GLM_SWIZZLE // for <glm::vec4>.xyz
 #include <glm/glm.hpp> 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/norm.hpp>
@@ -87,8 +88,7 @@ int main(int argc, char const *argv[])
         ///////////////////////////////////
         // Octree Update
         currentTime = glfwGetTime();
-        Bounds* b = calculateMainBounds(); //bbox of all particles
-        oct->setBounds(*b);
+        generateOctree(oct);
         double octDelta = glfwGetTime() - currentTime;
         
         ///////////////////////////////////

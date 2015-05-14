@@ -11,30 +11,47 @@ class Octree
     Bounds bbox;
 public:
     bool interior;
-    Particle* p;
+    glm::vec4 com; // center of mass (position, size)
+    std::vector<Particle*> bods;
+
     Octree* children[8];
 
-    Octree() {
-        // Bounds bbox;
-
-        // Start off as a leaf node with no data
-        interior = false;
-
+    Octree() : interior(false) {
         // Initially no children
         for (int i = 0; i < 8; ++i)
         {
             children[i] = NULL;
         }
     };
-    Octree(glm::vec3 center, glm::vec3 half_width) {
-        Octree();
+    Octree(const glm::vec3 center, const glm::vec3 half_width) : interior(false) {
+        // Initially no children
+        for (int i = 0; i < 8; ++i)
+        {
+            children[i] = NULL;
+        }
         
         // Set up bbox with given values
         bbox.center = center;
         bbox.half_width = half_width;
     };
 
-    ~Octree();
+    ~Octree()
+    {
+        clear();
+    }
+
+    void clear()
+    {
+        // Delete all children recursively
+        for (int i = 0; i < 8; ++i)
+        {
+            if (children[i])
+            {
+                children[i]->clear();
+                delete children[i];
+            }
+        }
+    }
 
     Bounds& getBounds()
     {
@@ -65,6 +82,66 @@ public:
     //
     // otree.findChildIndex(glm::vec3 point)
     //      returns idx 0-7 for correct quadrant
+    void insert(Particle* p, int maxDepth = 0, int depth = 0)
+    {
+        for (int i = 0; i < depth; ++i)
+        {
+            printf("-");
+        }
+        printf("INSERT <%g,%g,%g> : DEPTH %d, MAX %d, (interior? %d)\n", p->pos.x, p->pos.y, p->pos.z, depth, maxDepth, interior);
+        if (depth > maxDepth+10)
+        {
+            return;
+        }
+
+        // 1 - interior, recurse on correct child
+        if (interior)
+        {
+            printf("INTERIOR\n");
+            int idx = getChildIndex(p->pos);
+            if (depth >= maxDepth)
+            {
+                // Update COM with added object
+                com = glm::vec4(  (com.xyz() * com.w + p->pos * p->size) / (com.w + p->size), com.w + p->size);
+                bods.push_back(p);
+            }
+            else
+            {
+                children[idx]->insert(p, maxDepth, depth+1);
+            }
+        }
+        else if (bods.empty())
+        {
+            printf("EMPTY\n");
+            // 2 - leaf with no data, assign
+            com = glm::vec4(p->pos, p->size);
+            bods.push_back(p);
+        }
+        else
+        {
+            printf("SPLIT\n");
+            // 3 - leaf with data, split up octant
+            
+            interior = true; // Becoming an interior node
+            Particle* temp = bods.front();
+            bods.clear();
+            int idxA = getChildIndex(temp->pos);
+            int idxB = getChildIndex(p->pos);
+
+            // Create new children with current bounding boxes
+            for (int i = 0; i < 8; ++i)
+            {
+                glm::vec3 child_center = bbox.center;
+                child_center.x += bbox.half_width.x * (i&4 ? .5f : -.5f);
+                child_center.y += bbox.half_width.y * (i&2 ? .5f : -.5f);
+                child_center.z += bbox.half_width.z * (i&1 ? .5f : -.5f);
+                children[i] = new Octree(child_center, bbox.half_width*.5f);
+            }
+
+            children[idxA]->insert(temp, maxDepth, depth+1);
+            children[idxB]->insert(p, maxDepth, depth+1);
+        }
+    }
 
     int getChildIndex(const glm::vec3& point)
     {
@@ -100,4 +177,24 @@ Bounds* calculateMainBounds()
     bbox->half_width = (bmax-bmin)/2.0f;
     
     return bbox;
+}
+
+void generateOctree(Octree* root)
+{
+    // 1 - Delete all nodes
+    root->clear();
+    
+    // 2 - Update bounds
+    Bounds* b = calculateMainBounds(); //bbox of all particles
+    root->setBounds(*b);
+
+    // 3 - Add all particles
+    for(int i=0; i<MaxParticles; i++)
+    {
+        Particle& p = ParticlesContainer[i]; // shortcut        
+        if(p.life > 0.0f)
+        {
+            root->insert(&p, 10);
+        }
+    }
 }

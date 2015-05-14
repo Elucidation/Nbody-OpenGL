@@ -4,7 +4,7 @@
 #define G 2.0f
 #define ETA 0.01f
 
-const int MaxParticles = 1000;
+const int MaxParticles = 10;
 const float NewParticleSpeed = 10000000.0f;
 int LastUsedParticle = 0;
 
@@ -13,7 +13,7 @@ int LastUsedParticle = 0;
 struct Particle{
     glm::vec3 pos, vel, acc;
     unsigned char r,g,b,a; // Color
-    float size, angle, weight;
+    float size;
     float life; // Remaining life of the particle. if <0 : dead and unused.
     float cameradistance; // *Squared* distance to the camera. if dead : -1.0f
 
