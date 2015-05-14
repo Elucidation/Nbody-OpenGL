@@ -36,6 +36,19 @@ static const GLubyte originColors[] = {
   0, 255, 0, 255 // B for z
 };
 
+// Colors for 8 octants
+static const GLubyte octantColors[] = {
+  0, 0, 0, 255, 
+  255, 0, 0, 255, 
+  0, 255, 0, 255,
+  0, 0, 255, 255,
+  255, 255, 0, 255,
+  0, 255, 255, 255,
+  255, 0, 255, 255,
+  255, 255, 255, 255,
+};
+
+
 const unsigned int maxLinePoints = 16; // 12 lines to a box, 4 overlapping for strip
 ///
 void drawParticles(GLubyte* g_particle_color_data, unsigned long ParticlesCount);
@@ -44,6 +57,7 @@ void drawBounds(const Bounds& bbox, const GLubyte* color);
 void drawBox(const glm::vec3 bmin, const glm::vec3 bmax, const GLubyte* color);
 void drawTree(Octree* root);
 
+void colorParticles(Octree* oct);
 
 void updateGfx(GLfloat* g_particle_position_size_data, 
     GLubyte* g_particle_color_data, unsigned long ParticlesCount, Octree* oct)
@@ -51,15 +65,35 @@ void updateGfx(GLfloat* g_particle_position_size_data,
   // Clear the screen
   // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+  // Color particles based on oct-tree quadrant
+  colorParticles(oct);
+
   drawParticles(g_particle_color_data, ParticlesCount);
   drawOrigin();
 
-  // Draw Oct-tree 
+  // Draw Oct-tree
   drawTree(oct);
 
   // Swap buffers
   glfwSwapBuffers(window);
   glfwPollEvents();
+}
+
+void colorParticles(Octree* oct)
+{
+  for(int i=0; i<MaxParticles; i++)
+    {
+        Particle& p = ParticlesContainer[i]; // shortcut        
+        if(p.life > 0.0f)
+        {
+          int idx = oct->getChildIndex(p.pos);
+          p.r = octantColors[ 4*idx ];
+          p.g = octantColors[ 4*idx + 1 ];
+          p.b = octantColors[ 4*idx + 2 ];
+          p.a = octantColors[ 4*idx + 3 ];
+
+        }
+    }
 }
 
 void drawParticles(GLubyte* g_particle_color_data, unsigned long ParticlesCount)
