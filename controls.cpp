@@ -22,6 +22,7 @@ glm::mat4 getProjectionMatrix(){
   return ProjectionMatrix;
 }
 
+bool doRun = false;
 
 // Initial position : on +Z
 glm::vec3 position = glm::vec3( 0, 0, 0 ); 
@@ -39,6 +40,7 @@ float mouseSpeed = 0.005f;
 
 void computeMatricesFromInputs(){
   static double xpos, ypos;
+  static bool space_released = false;
 
   // glfwGetTime is called only once, the first time this function is called
   static double lastTime = glfwGetTime();
@@ -109,6 +111,20 @@ void computeMatricesFromInputs(){
   if (glfwGetKey( window, GLFW_KEY_LEFT ) == GLFW_PRESS){
     position -= right * deltaTime * speed;
   }
+
+  // Pause/Run simulation, only one toggle per spacebar down
+  if (glfwGetKey( window, GLFW_KEY_SPACE ) == GLFW_PRESS){
+    if (space_released){
+      doRun = !doRun;
+    }
+    space_released = false;
+  }
+  else if (glfwGetKey( window, GLFW_KEY_SPACE ) == GLFW_RELEASE){
+    space_released = true;
+  }
+
+  
+
 
   float FoV = initialFoV;// - 5 * glfwGetMouseWheel(); // Now GLFW 3 requires setting up a callback for this. It's a bit too complicated for this beginner's tutorial, so it's disabled instead.
 

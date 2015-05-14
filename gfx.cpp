@@ -21,21 +21,40 @@ GLuint quadProgramID;
 GLuint QuadViewProjMatrixID;
 GLuint line_position_buffer;
 GLuint line_color_buffer;
-static GLfloat* testParticles;
-static GLubyte* testColors; 
-const unsigned int specialCount = 5;
+static const GLfloat originPoints[] = {
+  1, 0, -20, 0.6, // x
+  0, 0, -20, 0.6,
+  0, 1, -20, 0.6, // y
+  0, 0, -20, 0.6,
+  0, 0, -19, 0.6 // z
+};
+static const GLubyte originColors[] = {
+  255, 0, 0, 255, // R for x
+  255, 255, 255, 255,
+  0, 0, 255, 255, // G for y
+  255, 255, 255, 255,
+  0, 255, 0, 255 // B for z
+};
+
+const unsigned int maxLinePoints = 16; // 12 lines to a box, 4 overlapping for strip
 ///
 void drawParticles(GLubyte* g_particle_color_data, unsigned long ParticlesCount);
-void drawTest();
+void drawOrigin();
+void drawBounds(Bounds* box, const GLubyte* color);
+void drawBox(glm::vec3 bmin, glm::vec3 bmax, const GLubyte* color);
 
 void updateGfx(GLfloat* g_particle_position_size_data, 
-    GLubyte* g_particle_color_data, unsigned long ParticlesCount)
+    GLubyte* g_particle_color_data, unsigned long ParticlesCount, Octree* oct)
 {
   // Clear the screen
   // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   drawParticles(g_particle_color_data, ParticlesCount);
-  drawTest();
+  drawOrigin();
+
+  static const GLubyte color[] = {0, 255, 0, 255};
+  Bounds* b = calculateMainBounds(); //bbox of all particles
+  drawBounds(b, color);
 
   // Swap buffers
   glfwSwapBuffers(window);
@@ -137,8 +156,9 @@ void drawParticles(GLubyte* g_particle_color_data, unsigned long ParticlesCount)
   glDisableVertexAttribArray(2);
 }
 
-void drawTest()
+void drawOrigin()
 {
+  const unsigned int numPoints = 5; // for origin
   glm::mat4 ProjectionMatrix = getProjectionMatrix();
   glm::mat4 ViewMatrix = getViewMatrix();
   
@@ -149,12 +169,121 @@ void drawTest()
   // but this is outside the scope of this tutorial.
   // http://www.opengl.org/wiki/Buffer_Object_Streaming
   glBindBuffer(GL_ARRAY_BUFFER, line_position_buffer);
-  glBufferData(GL_ARRAY_BUFFER, specialCount * 4 * sizeof(GLfloat), NULL, GL_STREAM_DRAW); // Buffer orphaning, a common way to improve streaming perf. See above link for details.
-  glBufferSubData(GL_ARRAY_BUFFER, 0, specialCount * sizeof(GLfloat) * 4, testParticles);
+  glBufferData(GL_ARRAY_BUFFER, numPoints * 4 * sizeof(GLfloat), NULL, GL_STREAM_DRAW); // Buffer orphaning, a common way to improve streaming perf. See above link for details.
+  glBufferSubData(GL_ARRAY_BUFFER, 0, numPoints * sizeof(GLfloat) * 4, originPoints);
 
   glBindBuffer(GL_ARRAY_BUFFER, line_color_buffer);
-  glBufferData(GL_ARRAY_BUFFER, specialCount * 4 * sizeof(GLubyte), NULL, GL_STREAM_DRAW); // Buffer orphaning, a common way to improve streaming perf. See above link for details.
-  glBufferSubData(GL_ARRAY_BUFFER, 0, specialCount * sizeof(GLubyte) * 4, testColors);
+  glBufferData(GL_ARRAY_BUFFER, numPoints * 4 * sizeof(GLubyte), NULL, GL_STREAM_DRAW); // Buffer orphaning, a common way to improve streaming perf. See above link for details.
+  glBufferSubData(GL_ARRAY_BUFFER, 0, numPoints * sizeof(GLubyte) * 4, originColors);
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+
+  // Use our shader
+  glUseProgram(quadProgramID);
+
+  glUniformMatrix4fv(QuadViewProjMatrixID, 1, GL_FALSE, &ViewProjectionMatrix[0][0]);
+
+  // 1st attribute buffer : positions
+  glEnableVertexAttribArray(0);
+  glBindBuffer(GL_ARRAY_BUFFER, line_position_buffer);
+  glVertexAttribPointer(
+      0,                                // attribute. No particular reason for 0, but must match the layout in the shader.
+      4,                                // size : x + y + z + size => 4
+      GL_FLOAT,                         // type
+      GL_FALSE,                         // normalized?
+      0,                                // stride
+      (void*)0                          // array buffer offset
+  );
+
+  // 2nd attribute buffer : colors
+  glEnableVertexAttribArray(1);
+  glBindBuffer(GL_ARRAY_BUFFER, line_color_buffer);
+  glVertexAttribPointer(
+      1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
+      4,                                // size : r + g + b + a => 4
+      GL_UNSIGNED_BYTE,                 // type
+      GL_TRUE,                          // normalized?    *** YES, this means that the unsigned char[4] will be accessible with a vec4 (floats) in the shader ***
+      0,                                // stride
+      (void*)0                          // array buffer offset
+  );
+
+  // no divisors
+  glVertexAttribDivisor(0, 0);
+  glVertexAttribDivisor(1, 0);
+
+  glDrawArrays(GL_LINE_STRIP, 0, numPoints);
+
+  glDisableVertexAttribArray(0);
+  glDisableVertexAttribArray(1);
+}
+
+void drawBounds(Bounds* bbox, const GLubyte* color)
+{
+  glm::vec3 bmin = bbox->center - bbox->half_width;
+  glm::vec3 bmax = bbox->center + bbox->half_width;
+  drawBox(bmin, bmax, color);
+}
+
+// Box min, box max points
+void drawBox(glm::vec3 bmin, glm::vec3 bmax, const GLubyte* color)
+{
+  glm::mat4 ProjectionMatrix = getProjectionMatrix();
+  glm::mat4 ViewMatrix = getViewMatrix();
+  
+  glm::mat4 ViewProjectionMatrix = ProjectionMatrix * ViewMatrix;
+
+  // Generate vertices from Bounds
+  const GLfloat boxPoints[] = {
+    // start front
+    (GLfloat)(bmin.x), (GLfloat)(bmin.y), (GLfloat)(bmin.z), 0.6,
+    
+    // front 4
+    (GLfloat)(bmax.x), (GLfloat)(bmin.y), (GLfloat)(bmin.z), 0.6,
+    (GLfloat)(bmax.x), (GLfloat)(bmax.y), (GLfloat)(bmin.z), 0.6,
+    (GLfloat)(bmin.x), (GLfloat)(bmax.y), (GLfloat)(bmin.z), 0.6,
+    (GLfloat)(bmin.x), (GLfloat)(bmin.y), (GLfloat)(bmin.z), 0.6,
+
+    // start back
+    (GLfloat)(bmin.x), (GLfloat)(bmin.y), (GLfloat)(bmax.z), 0.6,
+    
+    // back 4
+    (GLfloat)(bmax.x), (GLfloat)(bmin.y), (GLfloat)(bmax.z), 0.6,
+    (GLfloat)(bmax.x), (GLfloat)(bmax.y), (GLfloat)(bmax.z), 0.6,
+    (GLfloat)(bmin.x), (GLfloat)(bmax.y), (GLfloat)(bmax.z), 0.6,
+    (GLfloat)(bmin.x), (GLfloat)(bmin.y), (GLfloat)(bmax.z), 0.6,
+
+    // sides
+    (GLfloat)(bmax.x), (GLfloat)(bmin.y), (GLfloat)(bmax.z), 0.6,
+    (GLfloat)(bmax.x), (GLfloat)(bmin.y), (GLfloat)(bmin.z), 0.6,
+    (GLfloat)(bmax.x), (GLfloat)(bmax.y), (GLfloat)(bmin.z), 0.6,
+    (GLfloat)(bmax.x), (GLfloat)(bmax.y), (GLfloat)(bmax.z), 0.6,
+
+    (GLfloat)(bmin.x), (GLfloat)(bmax.y), (GLfloat)(bmax.z), 0.6,
+    (GLfloat)(bmin.x), (GLfloat)(bmax.y), (GLfloat)(bmin.z), 0.6,
+  };
+
+  GLubyte* boxColors = new GLubyte[maxLinePoints * 4];
+  for (int i = 0; i < maxLinePoints; ++i)
+  {
+    boxColors[i*4 + 0] = color[0];
+    boxColors[i*4 + 1] = color[1];
+    boxColors[i*4 + 2] = color[2];
+    boxColors[i*4 + 3] = color[3];
+  }
+
+  // Update the buffers that OpenGL uses for rendering.
+  // There are much more sophisticated means to stream data from the CPU to the GPU, 
+  // but this is outside the scope of this tutorial.
+  // http://www.opengl.org/wiki/Buffer_Object_Streaming
+  glBindBuffer(GL_ARRAY_BUFFER, line_position_buffer);
+  glBufferData(GL_ARRAY_BUFFER, maxLinePoints * 4 * sizeof(GLfloat), NULL, GL_STREAM_DRAW); // Buffer orphaning, a common way to improve streaming perf. See above link for details.
+  glBufferSubData(GL_ARRAY_BUFFER, 0, maxLinePoints * sizeof(GLfloat) * 4, boxPoints);
+
+  glBindBuffer(GL_ARRAY_BUFFER, line_color_buffer);
+  glBufferData(GL_ARRAY_BUFFER, maxLinePoints * 4 * sizeof(GLubyte), NULL, GL_STREAM_DRAW); // Buffer orphaning, a common way to improve streaming perf. See above link for details.
+  glBufferSubData(GL_ARRAY_BUFFER, 0, maxLinePoints * sizeof(GLubyte) * 4, boxColors);
 
 
   glEnable(GL_BLEND);
@@ -194,14 +323,11 @@ void drawTest()
   glVertexAttribDivisor(0, 0);
   glVertexAttribDivisor(1, 0);
 
-  glDrawArrays(GL_LINE_STRIP, 0, specialCount);
+  glDrawArrays(GL_LINE_STRIP, 0, maxLinePoints);
 
   glDisableVertexAttribArray(0);
   glDisableVertexAttribArray(1);
 }
-
-void drawBox()
-{}
 
 void error_callback(int error, const char* description)
 {
@@ -360,69 +486,23 @@ void initGfx()
 
     QuadViewProjMatrixID = glGetUniformLocation(quadProgramID, "VP");
 
+    // Set up origin
+
     // The VBO containing the positions and sizes of the particles
     glGenBuffers(1, &line_position_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, line_position_buffer);
     // Initialize with empty (NULL) buffer : it will be updated later, each frame.
-    glBufferData(GL_ARRAY_BUFFER, specialCount * 4 * sizeof(GLfloat), NULL, GL_STREAM_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, maxLinePoints * 4 * sizeof(GLfloat), NULL, GL_STREAM_DRAW);
+    // Give buffer
+    // glBufferData(GL_ARRAY_BUFFER, sizeof(originPoints), originPoints, GL_STATIC_DRAW);
 
     // The VBO containing the colors of the particles
     glGenBuffers(1, &line_color_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, line_color_buffer);
     // Initialize with empty (NULL) buffer : it will be updated later, each frame.
-    glBufferData(GL_ARRAY_BUFFER, specialCount * 4 * sizeof(GLubyte), NULL, GL_STREAM_DRAW);
- 
-    testParticles = new GLfloat[specialCount * 4];
-    testParticles[0] = 0;
-    testParticles[1] = 1;
-    testParticles[2] = -20.0f;
-    testParticles[3] = 0.6;
-
-    testParticles[4+0] = 0;
-    testParticles[4+1] = 0;
-    testParticles[4+2] = -20.0f;
-    testParticles[4+3] = 0.6;
-
-    testParticles[2*4+0] = 1;
-    testParticles[2*4+1] = 0;
-    testParticles[2*4+2] = -20.0f;
-    testParticles[2*4+3] = 0.6;
-
-    testParticles[3*4+0] = 0;
-    testParticles[3*4+1] = 0;
-    testParticles[3*4+2] = -20.0f;
-    testParticles[3*4+3] = 0.6;
-
-    testParticles[4*4+0] = 0;
-    testParticles[4*4+1] = 0;
-    testParticles[4*4+2] = -20.0f+1;
-    testParticles[4*4+3] = 0.6;
-
-    testColors = new GLubyte[specialCount * 4];
-    testColors[0] = 255;
-    testColors[1] = 0;
-    testColors[2] = 0;
-    testColors[3] = 255;
-
-    testColors[4+0] = 255;
-    testColors[4+1] = 255;
-    testColors[4+2] = 255;
-    testColors[4+3] = 255;
-    
-    testColors[2*4+0] = 0;
-    testColors[2*4+1] = 0;
-    testColors[2*4+2] = 255;
-    testColors[2*4+3] = 255;
-
-    testColors[3*4+0] = 255;
-    testColors[3*4+1] = 255;
-    testColors[3*4+2] = 255;
-    testColors[3*4+3] = 255;
-
-    testColors[4*4+0] = 0;
-    testColors[4*4+1] = 255;
-    testColors[4*4+2] = 0;
-    testColors[4*4+3] = 255;
+    glBufferData(GL_ARRAY_BUFFER, maxLinePoints * 4 * sizeof(GLubyte), NULL, GL_STREAM_DRAW);
+    // Give buffer
+    // glBufferData(GL_ARRAY_BUFFER, sizeof(originColors), originColors, GL_STATIC_DRAW);
 
 }
 

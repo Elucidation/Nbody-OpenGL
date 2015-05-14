@@ -84,6 +84,7 @@ void updateVelocities(float delta)
         if(p.life > 0.0f)
         {
             p.vel += p.acc * (float)delta;
+            p.vel *= 0.999; // damping
         }
     }
 }
@@ -212,10 +213,10 @@ void createNewParticles(unsigned long ParticlesCount, double delta)
     
         for(int i=0; i<newparticles; i++){
             int particleIndex = FindUnusedParticle();
-            ParticlesContainer[particleIndex].life = 20.0f + 10.0f*((rand() % 1000)/1000.0f); // This particle will live 5 seconds.
+            ParticlesContainer[particleIndex].life = 50.0f + 10.0f*((rand() % 1000)/1000.0f);
             ParticlesContainer[particleIndex].pos = glm::vec3(0,0,-20.0f);
 
-            float spread = 1.5f;
+            float spread = 0.5f;
             glm::vec3 maindir = glm::vec3(0.0f, 10.0f, 0.0f);
             // Very bad way to generate a random direction; 
             // See for instance http://stackoverflow.com/questions/5408276/python-uniform-spherical-distribution instead,
@@ -226,7 +227,7 @@ void createNewParticles(unsigned long ParticlesCount, double delta)
                 (rand()%2000 - 1000.0f)/1000.0f
             );
 
-            ParticlesContainer[particleIndex].pos += randomdir; // Not directly in center
+            ParticlesContainer[particleIndex].pos += randomdir*5.0f; // Not directly in center
             
             // ParticlesContainer[particleIndex].vel = maindir + randomdir*spread;
             ParticlesContainer[particleIndex].vel = randomdir*spread;

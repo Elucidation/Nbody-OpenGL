@@ -21,8 +21,10 @@ using namespace glm;
 #include "texture.hpp" // TextureIDs
 #include "controls.hpp" // Controls
 #include "sim.cpp" // Sim (contains N count etc.)
-#include "gfx.cpp" // Graphics call
 #include "octree.cpp" // Octree
+#include "gfx.cpp" // Graphics call (uses octree Bounds struct)
+
+extern bool doRun;
 
 int main(int argc, char const *argv[])
 {
@@ -32,6 +34,13 @@ int main(int argc, char const *argv[])
     double lastFPStime = glfwGetTime();
     int nbFrames = 0;
     long ParticlesCount = 0;
+    unsigned long numForceCalcs = 0;
+    double simDelta;
+
+
+    doRun = true; // Start with sim running
+
+    Octree* oct = new Octree();
 
     while (!glfwWindowShouldClose(window))
     {
@@ -53,20 +62,27 @@ int main(int argc, char const *argv[])
 
         ///////////////////////////////////
         // SIMULATION
+        if (doRun)
+        {
+            currentTime = glfwGetTime();
 
-        currentTime = glfwGetTime();
+            // Age and kill particles
+            ParticlesCount = ageKillResetParticles(dt); // Also zeros accelerations before calculateAccelerations()
 
-        // Age and kill particles
-        ParticlesCount = ageKillResetParticles(dt); // Also zeros accelerations before calculateAccelerations()
+            // Create new particles based on how many left
+            createNewParticles(ParticlesCount, dt);
 
-        // Create new particles based on how many left
-        createNewParticles(ParticlesCount, dt);
+            // Simulate all particles
+            // unsigned long numForceCalcs = simulateEuler(dt);
+            numForceCalcs = simulateLeapfrog(dt);
 
-        // Simulate all particles
-        // unsigned long numForceCalcs = simulateEuler(dt);
-        unsigned long numForceCalcs = simulateLeapfrog(dt);
-
-        double simDelta = glfwGetTime() - currentTime;
+            simDelta = glfwGetTime() - currentTime;
+        } 
+        else
+        {
+            simDelta = 0;
+            numForceCalcs = 0;
+        }
 
         ///////////////////////////////////
         // SORT UPDATE
@@ -80,7 +96,7 @@ int main(int argc, char const *argv[])
 
         updatePositionColorBuffer(g_particle_position_size_data, g_particle_color_data, CameraPosition);
 
-        updateGfx(g_particle_position_size_data, g_particle_color_data, ParticlesCount);
+        updateGfx(g_particle_position_size_data, g_particle_color_data, ParticlesCount, oct);
 
         double gfxDelta = glfwGetTime() - currentTime;
 
