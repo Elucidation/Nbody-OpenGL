@@ -1,6 +1,6 @@
 // Hard-code screen size for now
-#define SCREEN_WIDTH 800
-#define SCREEN_HEIGHT 600
+#define SCREEN_WIDTH 1600
+#define SCREEN_HEIGHT 1200
 
 GLuint VertexArrayID;
 GLuint billboardProgramID;
