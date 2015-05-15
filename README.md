@@ -7,8 +7,7 @@ This is a sandbox for practicing OpenGL using [GLFW](http://www.glfw.org).
 Check the other branches for working examples
 
 #### Octree decomposition
-![1K Particle NBody Otree](http://gfycat.com/AlertEvilErmine)
-![1K Particle NBody Otree](http://giant.gfycat.com/AlertEvilErmine.gif)
+[Octree visualization](http://gfycat.com/AlertEvilErmine)
 
 #### 1000 Particle NBody Sim
 
