@@ -88,6 +88,7 @@ int main(int argc, char const *argv[])
         ///////////////////////////////////
         // Octree Update
         currentTime = glfwGetTime();
+        // delete oct;
         oct = generateOctree();
         double octDelta = glfwGetTime() - currentTime;
         

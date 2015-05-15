@@ -1,6 +1,6 @@
 // Hard-code screen size for now
-#define SCREEN_WIDTH 1600
-#define SCREEN_HEIGHT 1200
+#define SCREEN_WIDTH 800
+#define SCREEN_HEIGHT 600
 
 GLuint VertexArrayID;
 GLuint billboardProgramID;
@@ -48,6 +48,7 @@ static const GLubyte octantColors[] = {
   255, 255, 255, 150,
 };
 
+extern bool showOct;
 
 const unsigned int maxLinePoints = 16; // 12 lines to a box, 4 overlapping for strip
 ///
@@ -67,8 +68,11 @@ void updateGfx(GLfloat* g_particle_position_size_data,
 
   drawOrigin();
 
-  // Draw Oct-tree
-  drawTree(oct);
+  if (showOct)
+  {
+    // Draw Oct-tree
+    drawTree(oct);
+  }
   
   // Draw Particles
   // colorParticles(oct); // Color particles based on oct-tree quadrant
@@ -269,7 +273,7 @@ void drawTree(Octree* root, int depth /*=0*/, int maxDepth /*=5*/)
       drawTree(root->children[i], depth+1);
     }
   }
-  else
+  else if (!root->bods.empty())
   {
     drawBounds(*(root->getBounds()), color);
   }

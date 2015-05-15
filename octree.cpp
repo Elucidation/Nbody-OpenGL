@@ -55,7 +55,6 @@ public:
         {
             if (children[i])
             {
-                children[i]->clear();
                 delete children[i];
             }
         }
