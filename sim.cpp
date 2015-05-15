@@ -118,7 +118,8 @@ void updatePositionColorBuffer(GLfloat* g_particle_position_size_data, GLubyte* 
 }
 
 // Needs acceleration vectors to be zeroed before running
-unsigned long calculateAccelerations()
+// ^ Normally called automatically by ageKillResetParticles
+unsigned long acc_brute()
 {
     // Simulate all particles
     unsigned long numForceCalcs = 0;
@@ -129,11 +130,6 @@ unsigned long calculateAccelerations()
         // Ignore dead particles (they'll be reset later)
         if(p.life > 0.0f)
         {
-            // Simulate simple physics : gravity only, no collisions
-            // p.vel += glm::vec3(0.0f,-9.81f, 0.0f) * (float)delta * 0.5f;
-
-            // glm::vec3 acc(0.0f,0.0f,0.0f);
-
             for (int j = i+1; j < MaxParticles; ++j)
             {
                 Particle& q = ParticlesContainer[j]; // shortcut
@@ -248,7 +244,7 @@ void createNewParticles(unsigned long ParticlesCount, double delta)
 // Euler integration
 unsigned long simulateEuler(double dt)
 {
-    unsigned long numForceCalcs= calculateAccelerations();
+    unsigned long numForceCalcs= acc_brute();
     updatePositionsVelocities(dt);
     return numForceCalcs;
 }
@@ -257,7 +253,7 @@ unsigned long simulateEuler(double dt)
 unsigned long simulateLeapfrog(double dt)
 {
     updatePositions(0.5*dt);
-    unsigned long numForceCalcs= calculateAccelerations();
+    unsigned long numForceCalcs= acc_brute();
     updateVelocities(dt);
     updatePositions(0.5*dt);
 

@@ -91,15 +91,8 @@ public:
     //      create 8 children, find correct child for both new data & temp data
     //      recurse call insert(childA,data) & insert(childB, temp_data)
     //
-    // otree.findChildIndex(glm::vec3 point)
-    //      returns idx 0-7 for correct quadrant
     void insert(Particle* p, int maxDepth = 0, int depth = 0)
     {
-        // for (int i = 0; i < depth; ++i)
-        // {
-        //     printf("-");
-        // }
-        // printf("INSERT <%g,%g,%g> : DEPTH %d, MAX %d, (interior? %d)\n", p->pos.x, p->pos.y, p->pos.z, depth, maxDepth, interior);
         if (depth > maxDepth+10)
         {
             return;
@@ -108,7 +101,6 @@ public:
         // 1 - interior, recurse on correct child
         if (interior)
         {
-            // printf("INTERIOR\n");
             int idx = getChildIndex(p->pos);
             if (depth >= maxDepth)
             {
@@ -123,55 +115,42 @@ public:
         }
         else if (bods.empty())
         {
-            // printf("EMPTY\n");
             // 2 - leaf with no data, assign
             com = glm::vec4(p->pos, p->size);
             bods.push_back(p);
         }
         else
         {
-            // printf("SPLIT\n");
-            // printf("Bods: %ld\n", bods.size());
             // 3 - leaf with data, split up octant
             
             interior = true; // Becoming an interior node
             Particle* temp = bods.front();
-            // printf("temp pos size: %g %g %g, %g\n", temp->pos.x, temp->pos.y, temp->pos.z, temp->size);
-            // printf("p pos size: %g %g %g, %g\n", p->pos.x, p->pos.y, p->pos.z, p->size);
-            // printf("bbox: %g %g %g, %g %g %g\n", bbox->center.x, bbox->center.y, bbox->center.z, 
-            //                             bbox->half_width.x, bbox->half_width.y, bbox->half_width.z);
             bods.clear();
             int idxA = getChildIndex(temp->pos);
             int idxB = getChildIndex(p->pos);
-            // printf("Child idxA %d idxB %d\n", idxA, idxB);
 
-            // printf("A\n");
             // Create new children with current bounding boxes
             for (int i = 0; i < 8; ++i)
             {
-                // printf("  C%d/7\n", i);
                 glm::vec3 child_center = glm::vec3(bbox->center);
                 child_center.x += bbox->half_width.x * (i&4 ? .5f : -.5f);
                 child_center.y += bbox->half_width.y * (i&2 ? .5f : -.5f);
                 child_center.z += bbox->half_width.z * (i&1 ? .5f : -.5f);
                 glm::vec3 child_half_width = bbox->half_width*.5f;
-                // printf("  child bbox: <%g %g %g>, <%g %g %g>\n", 
-                //             child_center.x, child_center.y, child_center.z, 
-                //             child_half_width.x, child_half_width.y, child_half_width.z);
                 children[i] = new Octree(child_center, child_half_width );
             }
 
-            // printf("B\n");
             children[idxA]->insert(temp, maxDepth, depth+1);
             children[idxB]->insert(p, maxDepth, depth+1);
-            // printf("SPLIT END\n");
         }
     }
-
+    
+    // otree.getChildIndex(glm::vec3 point)
+    //      returns idx 0-7 for correct octant
     int getChildIndex(const glm::vec3& point)
     {
         int idx = 0;
-        // quadrants from -x,-y,-z to x,y,z
+        // octants from -x,-y,-z to x,y,z
         if (point.x >= bbox->center.x)
             idx |= 1 << 2;
         if (point.y >= bbox->center.y)
