@@ -88,7 +88,7 @@ int main(int argc, char const *argv[])
         ///////////////////////////////////
         // Octree Update
         currentTime = glfwGetTime();
-        generateOctree(oct);
+        oct = generateOctree();
         double octDelta = glfwGetTime() - currentTime;
         
         ///////////////////////////////////
@@ -112,7 +112,7 @@ int main(int argc, char const *argv[])
         nbFrames++;
         if ( glfwGetTime() - lastFPStime >= 1.0 ){ // If last prinf() was more than 1 sec ago
             // printf and reset timer
-            printf("%04.4f ms/frame \t (N: %.2fK, CALC: %10ld) \t|\t [%03.2f ms/sim, %03.2f ms/oct, %03.2f ms/sort, %03.2f ms/gfx]\n", 
+            printf("%04.4f ms/frame\t(N: %.2fK, CALC: %10ld) |\t [%03.2f ms/sim, %03.2f ms/oct, %03.2f ms/sort, %03.2f ms/gfx]\n", 
                 1000.0/double(nbFrames), (double)(ParticlesCount)/1000.0, numForceCalcs, 
                 simDelta*1000.0, octDelta*1000.0, sortDelta*1000.0, gfxDelta*1000.0);
 

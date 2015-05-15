@@ -4,7 +4,7 @@
 #define G 2.0f
 #define ETA 0.01f
 
-const int MaxParticles = 10;
+const int MaxParticles = 1000;
 const float NewParticleSpeed = 10000000.0f;
 int LastUsedParticle = 0;
 

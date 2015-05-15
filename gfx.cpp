@@ -38,14 +38,14 @@ static const GLubyte originColors[] = {
 
 // Colors for 8 octants
 static const GLubyte octantColors[] = {
-  0, 0, 0, 255, 
-  255, 0, 0, 255, 
-  0, 255, 0, 255,
-  0, 0, 255, 255,
-  255, 255, 0, 255,
-  0, 255, 255, 255,
-  255, 0, 255, 255,
-  255, 255, 255, 255,
+  0, 0, 0, 150,
+  255, 0, 0, 150,
+  0, 255, 0, 150,
+  0, 0, 255, 150,
+  255, 255, 0, 150,
+  0, 255, 255, 150,
+  255, 0, 255, 150,
+  255, 255, 255, 150,
 };
 
 
@@ -55,7 +55,7 @@ void drawParticles(GLubyte* g_particle_color_data, unsigned long ParticlesCount)
 void drawOrigin();
 void drawBounds(const Bounds& bbox, const GLubyte* color);
 void drawBox(const glm::vec3 bmin, const glm::vec3 bmax, const GLubyte* color);
-void drawTree(Octree* root);
+void drawTree(Octree* root, int depth=0, int maxDepth=8);
 
 void colorParticles(Octree* oct);
 
@@ -63,15 +63,16 @@ void updateGfx(GLfloat* g_particle_position_size_data,
     GLubyte* g_particle_color_data, unsigned long ParticlesCount, Octree* oct)
 {
   // Clear the screen
-  // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  
-  // colorParticles(oct); // Color particles based on oct-tree quadrant
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  drawParticles(g_particle_color_data, ParticlesCount);
   drawOrigin();
 
   // Draw Oct-tree
   drawTree(oct);
+  
+  // Draw Particles
+  // colorParticles(oct); // Color particles based on oct-tree quadrant
+  drawParticles(g_particle_color_data, ParticlesCount);
 
   // Swap buffers
   glfwSwapBuffers(window);
@@ -253,23 +254,31 @@ void drawOrigin()
   glDisableVertexAttribArray(1);
 }
 
-void drawTree(Octree* root)
+void drawTree(Octree* root, int depth /*=0*/, int maxDepth /*=5*/)
 {
-  static const GLubyte color[] = {0, 255, 0, 255};
-  drawBounds(root->getBounds(), color);
+  if (depth > maxDepth)
+    return;
+  int color_idx = depth % 8;
+  const GLubyte* color = octantColors+color_idx*4;
+  // static const GLubyte color[] = {0, 255, 0, 255};
+
   if (root->interior)
   {
     for (int i = 0; i < 8; ++i)
     {
-      drawTree(root->children[i]);
+      drawTree(root->children[i], depth+1);
     }
+  }
+  else
+  {
+    drawBounds(*(root->getBounds()), color);
   }
 }
 
 void drawBounds(const Bounds& bbox, const GLubyte* color)
 {
-  glm::vec3 bmin = bbox.center - bbox.half_width;
-  glm::vec3 bmax = bbox.center + bbox.half_width;
+  glm::vec3 bmin = bbox.center - bbox.half_width*0.99f;
+  glm::vec3 bmax = bbox.center + bbox.half_width*0.99f;
   drawBox(bmin, bmax, color);
 }
 
