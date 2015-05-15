@@ -50,6 +50,10 @@ public:
 
     void clear()
     {
+        delete bbox;
+
+        bods.clear();
+        
         // Delete all children recursively
         for (int i = 0; i < 8; ++i)
         {

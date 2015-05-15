@@ -149,6 +149,8 @@ void computeMatricesFromInputs(){
       {
         printf("Mouse hidden\n");
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED );
+        // Reset mouse position for next frame
+        glfwSetCursorPos(window, 0, 0);
       }
       else
       {
