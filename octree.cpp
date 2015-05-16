@@ -1,165 +1,162 @@
 // Used for oct-tree decomposition & Barnes-Hut algorithm in nbody sim
 
-// AABB bounding box
-struct Bounds
+#include "octree.hpp"
+
+extern const int MaxParticles;
+extern Particle ParticlesContainer[];
+
+void Octree::Init()
 {
-  glm::vec3 center, half_width;
+    bbox = new Bounds();
+
+    // Initially a leaf
+    interior = false;
+
+    // Initially no children
+    for (int i = 0; i < 8; ++i)
+    {
+        children[i] = NULL;
+    }
+}
+
+Octree::Octree(const glm::vec3& center, const glm::vec3& half_width)
+{
+    Init();
+    
+    // Set up bbox with given values
+    bbox->center = glm::vec3(center);
+    bbox->half_width = glm::vec3(half_width);
 };
 
-class Octree
+Octree::Octree() { Init(); };
+
+Octree::~Octree() { clear(); }
+
+void Octree::clear()
 {
-    Bounds* bbox;
-public:
-    bool interior;
-    glm::vec4 com; // center of mass (position, size)
-    std::vector<Particle*> bods;
+    delete bbox;
 
-    Octree* children[8];
-
-    Octree()
+    bods.clear();
+    
+    // Delete all children recursively
+    for (int i = 0; i < 8; ++i)
     {
-        Init();
-    };
-    Octree(const glm::vec3& center, const glm::vec3& half_width)
-    {
-        Init();
-        
-        // Set up bbox with given values
-        bbox->center = glm::vec3(center);
-        bbox->half_width = glm::vec3(half_width);
-    };
-
-    ~Octree()
-    {
-        clear();
-    }
-
-    void Init()
-    {
-        bbox = new Bounds();
-
-        // Initially a leaf
-        interior = false;
-
-        // Initially no children
-        for (int i = 0; i < 8; ++i)
+        if (children[i])
         {
-            children[i] = NULL;
+            delete children[i];
         }
     }
+}
 
-    void clear()
+Bounds* Octree::getBounds() { return bbox; }
+
+void Octree::setBounds(Bounds* b) { bbox = b; }
+
+bool Octree::isInBounds(const glm::vec3& point)
+{
+    return glm::all(glm::lessThan(glm::abs(point - bbox->center), bbox->half_width));
+}
+
+// void calcForces(Particle* p, )
+
+// octree is interior node (has children) or leaf node (no children/unsplit)
+//
+// otree.insert(node)
+// 1 - otree is interior
+//      find correct child and recursively call insert(child)
+// 2 - otree is leaf with nothing assigned
+//      assign data to leaf and done
+// 3 - otree is leaf with data
+//      store data in temp
+//      create 8 children, find correct child for both new data & temp data
+//      recurse call insert(childA,data) & insert(childB, temp_data)
+//
+void Octree::insert(Particle* p, int maxDepth /*= 0*/, int depth /*= 0*/)
+{
+    if (depth > maxDepth+10)
     {
-        delete bbox;
-
-        bods.clear();
-        
-        // Delete all children recursively
-        for (int i = 0; i < 8; ++i)
-        {
-            if (children[i])
-            {
-                delete children[i];
-            }
-        }
+        return;
     }
 
-    Bounds* getBounds()
-    {
-        return bbox;
-    }
+    // Update COM with added object
+    com = glm::vec4(  (com.xyz() * com.w + p->pos * p->size) / (com.w + p->size), 
+        com.w + p->size);
 
-    void setBounds(Bounds* b)
+    // 1 - interior, recurse on correct child
+    if (interior)
     {
-        bbox = b;
-    }
-
-    bool isInBounds(const glm::vec3& point)
-    {
-        return glm::all(glm::lessThan(glm::abs(point - bbox->center), bbox->half_width));
-    }
-
-    // octree is interior node (has children) or leaf node (no children/unsplit)
-    //
-    // otree.insert(node)
-    // 1 - otree is interior
-    //      find correct child and recursively call insert(child)
-    // 2 - otree is leaf with nothing assigned
-    //      assign data to leaf and done
-    // 3 - otree is leaf with data
-    //      store data in temp
-    //      create 8 children, find correct child for both new data & temp data
-    //      recurse call insert(childA,data) & insert(childB, temp_data)
-    //
-    void insert(Particle* p, int maxDepth = 0, int depth = 0)
-    {
-        if (depth > maxDepth+10)
+        int idx = Octree::getChildIndex(p->pos);
+        if (depth >= maxDepth)
         {
-            return;
-        }
-
-        // 1 - interior, recurse on correct child
-        if (interior)
-        {
-            int idx = getChildIndex(p->pos);
-            if (depth >= maxDepth)
-            {
-                // Update COM with added object
-                com = glm::vec4(  (com.xyz() * com.w + p->pos * p->size) / (com.w + p->size), com.w + p->size);
-                bods.push_back(p);
-            }
-            else
-            {
-                children[idx]->insert(p, maxDepth, depth+1);
-            }
-        }
-        else if (bods.empty())
-        {
-            // 2 - leaf with no data, assign
-            com = glm::vec4(p->pos, p->size);
             bods.push_back(p);
         }
         else
         {
-            // 3 - leaf with data, split up octant
-            
-            interior = true; // Becoming an interior node
-            Particle* temp = bods.front();
-            bods.clear();
-            int idxA = getChildIndex(temp->pos);
-            int idxB = getChildIndex(p->pos);
-
-            // Create new children with current bounding boxes
-            for (int i = 0; i < 8; ++i)
-            {
-                glm::vec3 child_center = glm::vec3(bbox->center);
-                child_center.x += bbox->half_width.x * (i&4 ? .5f : -.5f);
-                child_center.y += bbox->half_width.y * (i&2 ? .5f : -.5f);
-                child_center.z += bbox->half_width.z * (i&1 ? .5f : -.5f);
-                glm::vec3 child_half_width = bbox->half_width*.5f;
-                children[i] = new Octree(child_center, child_half_width );
-            }
-
-            children[idxA]->insert(temp, maxDepth, depth+1);
-            children[idxB]->insert(p, maxDepth, depth+1);
+            children[idx]->insert(p, maxDepth, depth+1);
         }
     }
-    
-    // otree.getChildIndex(glm::vec3 point)
-    //      returns idx 0-7 for correct octant
-    int getChildIndex(const glm::vec3& point)
+    else if (bods.empty())
     {
-        int idx = 0;
-        // octants from -x,-y,-z to x,y,z
-        if (point.x >= bbox->center.x)
-            idx |= 1 << 2;
-        if (point.y >= bbox->center.y)
-            idx |= 1 << 1;
-        if (point.z >= bbox->center.z)
-            idx |= 1 << 0;
-        return idx;
+        // 2 - leaf with no data, assign
+        com = glm::vec4(p->pos, p->size);
+        bods.push_back(p);
     }
-};
+    else
+    {
+        // 3 - leaf with data, split up octant
+        
+        interior = true; // Becoming an interior node
+        Particle* temp = bods.front();
+        bods.clear();
+        int idxA = Octree::getChildIndex(temp->pos);
+        int idxB = Octree::getChildIndex(p->pos);
+
+        // Create new children with current bounding boxes
+        for (int i = 0; i < 8; ++i)
+        {
+            glm::vec3 child_center = glm::vec3(bbox->center);
+            child_center.x += bbox->half_width.x * (i&4 ? .5f : -.5f);
+            child_center.y += bbox->half_width.y * (i&2 ? .5f : -.5f);
+            child_center.z += bbox->half_width.z * (i&1 ? .5f : -.5f);
+            glm::vec3 child_half_width = bbox->half_width*.5f;
+            children[i] = new Octree(child_center, child_half_width );
+        }
+
+        children[idxA]->insert(temp, maxDepth, depth+1);
+        children[idxB]->insert(p, maxDepth, depth+1);
+    }
+}
+
+// otree.getChildIndex(glm::vec3 point)
+//      returns idx 0-7 for correct octant
+int Octree::getChildIndex(const glm::vec3& point)
+{
+    int idx = 0;
+    // octants from -x,-y,-z to x,y,z
+    if (point.x >= bbox->center.x)
+        idx |= 1 << 2;
+    if (point.y >= bbox->center.y)
+        idx |= 1 << 1;
+    if (point.z >= bbox->center.z)
+        idx |= 1 << 0;
+    return idx;
+}
+
+void Octree::getStats(int& nodes, int& leafs)
+{
+    nodes++;
+    if (interior)
+    {
+        for (int i = 0; i < 8; ++i)
+        {
+            children[i]->getStats(nodes, leafs);
+        }
+    }
+    else
+    {
+        leafs++;
+    }
+}
 
 
 Bounds* calculateMainBounds()
@@ -185,16 +182,12 @@ Bounds* calculateMainBounds()
 
 Octree* generateOctree()
 {
-    // printf("GENERATE OCTREE\n");
     // 1 - Delete all nodes
     Octree* root = new Octree();
     
     // 2 - Update bounds
     Bounds* b = calculateMainBounds(); //bbox of all particles
     root->setBounds(b);
-
-    // printf("Main Bounds: <%g %g %g>, <%g %g %g>\n", b->center.x, b->center.y, b->center.z,
-    //                                   b->half_width.x,b->half_width.y,b->half_width.z);
 
     // 3 - Add all particles
     for(int i=0; i<MaxParticles; i++)
@@ -205,6 +198,6 @@ Octree* generateOctree()
             root->insert(p, 10);
         }
     }
-    // printf("DONE GENERATING OCTREE\n---\n");
     return root;
 }
+

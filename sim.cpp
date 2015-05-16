@@ -1,30 +1,17 @@
 // Contains functions for simulating particles
 
+#include "sim.hpp"
+
 // Physics constants
 #define G 2.0f
 #define ETA 0.01f
 
 const int MaxParticles = 1000;
+Particle ParticlesContainer[MaxParticles];
+
 const float NewParticleSpeed = 10000000.0f;
 int LastUsedParticle = 0;
 
-
-// CPU representation of a particle
-struct Particle{
-    glm::vec3 pos, vel, acc;
-    unsigned char r,g,b,a; // Color
-    float size;
-    float life; // Remaining life of the particle. if <0 : dead and unused.
-    float cameradistance; // *Squared* distance to the camera. if dead : -1.0f
-
-    bool operator<(const Particle& that) const {
-        // Sort in reverse order : far particles drawn first.
-        return this->cameradistance > that.cameradistance;
-    }
-};
-
-
-Particle ParticlesContainer[MaxParticles];
 
 void SortParticles(){
     std::sort(&ParticlesContainer[0], &ParticlesContainer[MaxParticles]);
@@ -119,7 +106,7 @@ void updatePositionColorBuffer(GLfloat* g_particle_position_size_data, GLubyte* 
 
 // Needs acceleration vectors to be zeroed before running
 // ^ Normally called automatically by ageKillResetParticles
-unsigned long acc_brute()
+unsigned long calc_all_acc_brute()
 {
     // Simulate all particles
     unsigned long numForceCalcs = 0;
@@ -156,6 +143,23 @@ unsigned long acc_brute()
     }
     return numForceCalcs;
 }
+
+// calculate all accelerations for all particles
+// unsigned long calc_all_acc_barnes_hut(Octree* rootOctree)
+// {
+//     for(int i=0; i<MaxParticles; i++)
+//     {
+//         Particle* p = &(ParticlesContainer[i]);
+//         acc_barnes_hut(p, rootOctree);
+//     }
+// }
+
+// // Calculate accelerations on body using barnes hut algorithm on given octree
+// // in-place update particle's acceleration vector with it
+// void acc_barnes_hut(Particle* body, Octree* rootOctree)
+// {
+
+// }
 
 // Also resets accelerations
 unsigned long ageKillResetParticles(double delta)
@@ -244,7 +248,7 @@ void createNewParticles(unsigned long ParticlesCount, double delta)
 // Euler integration
 unsigned long simulateEuler(double dt)
 {
-    unsigned long numForceCalcs= acc_brute();
+    unsigned long numForceCalcs= calc_all_acc_brute();
     updatePositionsVelocities(dt);
     return numForceCalcs;
 }
@@ -253,7 +257,7 @@ unsigned long simulateEuler(double dt)
 unsigned long simulateLeapfrog(double dt)
 {
     updatePositions(0.5*dt);
-    unsigned long numForceCalcs= acc_brute();
+    unsigned long numForceCalcs= calc_all_acc_brute();
     updateVelocities(dt);
     updatePositions(0.5*dt);
 

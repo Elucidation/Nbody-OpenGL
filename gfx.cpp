@@ -1,4 +1,7 @@
 // Hard-code screen size for now
+#include "sim.hpp"
+#include "octree.hpp"
+
 #define SCREEN_WIDTH 1600
 #define SCREEN_HEIGHT 1200
 
@@ -48,13 +51,22 @@ static const GLubyte octantColors[] = {
   255, 255, 255, 150,
 };
 
-extern bool showOct;
+static const GLubyte markerColors[] = {
+  255, 0, 0, 255,
+  255, 0, 0, 255,
+  0, 255, 0, 255,
+};
+
+
+// extern bool showOct;
 
 const unsigned int maxLinePoints = 16; // 12 lines to a box, 4 overlapping for strip
 ///
+void drawOctCOM(Octree* root, const float size=1.f, const int depth=0, const int max_depth=10);
 void drawParticles(GLubyte* g_particle_color_data, unsigned long ParticlesCount);
 void drawOrigin();
 void drawBounds(const Bounds& bbox, const GLubyte* color);
+void drawMarker(const glm::vec3 point, const float half_width);
 void drawBox(const glm::vec3 bmin, const glm::vec3 bmax, const GLubyte* color);
 void drawTree(Octree* root, int depth=0, int maxDepth=8);
 
@@ -72,7 +84,8 @@ void updateGfx(GLfloat* g_particle_position_size_data,
   {
     // Draw Oct-tree
     drawTree(oct);
-  }
+    // drawOctCOM(oct); // For simple visualization of node center of masses
+  }  
   
   // Draw Particles
   // colorParticles(oct); // Color particles based on oct-tree quadrant
@@ -98,6 +111,24 @@ void colorParticles(Octree* oct)
 
         }
     }
+}
+
+// Draws a small marker (triangle) at each CoM of each node, decreasing in size
+// for simple visualization of node center of masses
+void drawOctCOM(Octree* root, const float size, const int depth, const int max_depth)
+{
+  if (depth > max_depth) return;
+
+  if (!root->bods.empty())
+    drawMarker(root->com.xyz(),size);
+
+  if (root->interior)
+  {
+    for (int i = 0; i < 8; ++i)
+    {
+      drawOctCOM(root->children[i], size/1.5f, depth+1, max_depth);
+    }
+  }
 }
 
 void drawParticles(GLubyte* g_particle_color_data, unsigned long ParticlesCount)
@@ -284,6 +315,75 @@ void drawBounds(const Bounds& bbox, const GLubyte* color)
   glm::vec3 bmin = bbox.center - bbox.half_width*0.99f;
   glm::vec3 bmax = bbox.center + bbox.half_width*0.99f;
   drawBox(bmin, bmax, color);
+}
+
+void drawMarker(const glm::vec3 point, const float half_width)
+{
+  static const int numMarkerPoints = 3;
+  glm::mat4 ProjectionMatrix = getProjectionMatrix();
+  glm::mat4 ViewMatrix = getViewMatrix();
+  
+  glm::mat4 ViewProjectionMatrix = ProjectionMatrix * ViewMatrix;
+
+  // Generate vertices from Bounds
+  const GLfloat markerPoints[] = {
+    // start front
+    (GLfloat)(point.x-half_width*.5f), (GLfloat)(point.y-half_width), (GLfloat)(point.z), 1.0,
+    (GLfloat)(point.x+half_width*.5f), (GLfloat)(point.y-half_width), (GLfloat)(point.z), 1.0,
+    (GLfloat)(point.x), (GLfloat)(point.y), (GLfloat)(point.z), 1.0,
+  };
+
+  // Update the buffers that OpenGL uses for rendering.
+  glBindBuffer(GL_ARRAY_BUFFER, line_position_buffer);
+  glBufferData(GL_ARRAY_BUFFER, numMarkerPoints * 4 * sizeof(GLfloat), NULL, GL_STREAM_DRAW); // Buffer orphaning, a common way to improve streaming perf. See above link for details.
+  glBufferSubData(GL_ARRAY_BUFFER, 0, numMarkerPoints * sizeof(GLfloat) * 4, markerPoints);
+
+  glBindBuffer(GL_ARRAY_BUFFER, line_color_buffer);
+  glBufferData(GL_ARRAY_BUFFER, numMarkerPoints * 4 * sizeof(GLubyte), NULL, GL_STREAM_DRAW); // Buffer orphaning, a common way to improve streaming perf. See above link for details.
+  glBufferSubData(GL_ARRAY_BUFFER, 0, numMarkerPoints * sizeof(GLubyte) * 4, markerColors);
+
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+
+  // Use our shader
+  glUseProgram(quadProgramID);
+
+  glUniformMatrix4fv(QuadViewProjMatrixID, 1, GL_FALSE, &ViewProjectionMatrix[0][0]);
+
+  // 1st attribute buffer : positions
+  glEnableVertexAttribArray(0);
+  glBindBuffer(GL_ARRAY_BUFFER, line_position_buffer);
+  glVertexAttribPointer(
+      0,                                // attribute. No particular reason for 0, but must match the layout in the shader.
+      4,                                // size : x + y + z + size => 4
+      GL_FLOAT,                         // type
+      GL_FALSE,                         // normalized?
+      0,                                // stride
+      (void*)0                          // array buffer offset
+  );
+
+  // 2nd attribute buffer : colors
+  glEnableVertexAttribArray(1);
+  glBindBuffer(GL_ARRAY_BUFFER, line_color_buffer);
+  glVertexAttribPointer(
+      1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
+      4,                                // size : r + g + b + a => 4
+      GL_UNSIGNED_BYTE,                 // type
+      GL_TRUE,                          // normalized?    *** YES, this means that the unsigned char[4] will be accessible with a vec4 (floats) in the shader ***
+      0,                                // stride
+      (void*)0                          // array buffer offset
+  );
+
+  // no divisors
+  glVertexAttribDivisor(0, 0);
+  glVertexAttribDivisor(1, 0);
+
+  glDrawArrays(GL_TRIANGLES, 0, numMarkerPoints);
+
+  glDisableVertexAttribArray(0);
+  glDisableVertexAttribArray(1);
 }
 
 // Box min, box max points

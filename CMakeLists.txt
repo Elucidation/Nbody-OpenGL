@@ -28,7 +28,9 @@ set(GL_LIBRARY GL GLU X11 Xi Xrandr Xcursor Xxf86vm pthread Xinerama Xft)
 add_library(Shader loadShader.cpp loadShader.hpp)
 add_library(Texture texture.cpp texture.hpp)
 add_library(Controls controls.cpp controls.hpp)
-set(SOURCES play.cpp loadShader.hpp texture.hpp controls.hpp)
+add_library(Sim sim.cpp sim.hpp)
+add_library(Octree octree.cpp octree.hpp)
+set(SOURCES play.cpp loadShader.hpp texture.hpp controls.hpp octree.hpp sim.hpp)
 
 # Executables
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
