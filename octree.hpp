@@ -1,25 +1,29 @@
 #ifndef OCTREE_HPP
 #define OCTREE_HPP
+#include "octree.hpp"
 
 #include <vector>
 
-#include <GL/glew.h> // GLEW, for sim.hpp
+// #include <GL/glew.h> // GLEW, for sim.hpp
 
-// GLM
-#define GLM_FORCE_RADIANS
-#define GLM_SWIZZLE // for <glm::vec4>.xyz
-#include <glm/glm.hpp>
-#include <glm/gtc/constants.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-using namespace glm;
+// // GLM
+// #define GLM_FORCE_RADIANS
+// #define GLM_SWIZZLE // for <glm::vec4>.xyz
+// #include <glm/glm.hpp>
+// #include <glm/gtc/constants.hpp>
+// #include <glm/gtc/matrix_transform.hpp>
+// using namespace glm;
 
+#include "gfx.hpp"
 #include "sim.hpp"
+// #include "controls.hpp"
 
 // AABB bounding box
 struct Bounds
 {
   glm::vec3 center, half_width;
 };
+typedef struct Bounds Bounds;
 
 class Octree
 {

@@ -3,15 +3,29 @@
 
 #include <algorithm> // for length2
 
-#include <GL/glew.h>
+#include <GL/glew.h> // GLEW
+#include <GLFW/glfw3.h> // GLFW
+
+// GLM
+#define GLM_FORCE_RADIANS
+#define GLM_SWIZZLE // for <glm::vec4>.xyz
+#include <glm/glm.hpp> 
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/norm.hpp>
+#include <glm/gtx/string_cast.hpp>
+using namespace glm;
+
+// #include "gfx.hpp"
+
+// #include <GL/glew.h>
 
 // Include GLM
-#define GLM_FORCE_RADIANS
-#include <glm/glm.hpp>
-#include <glm/gtc/constants.hpp>
-#include <glm/gtx/norm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-using namespace glm;
+// #define GLM_FORCE_RADIANS
+// #include <glm/glm.hpp>
+// #include <glm/gtc/constants.hpp>
+// #include <glm/gtx/norm.hpp>
+// #include <glm/gtc/matrix_transform.hpp>
+// using namespace glm;
 
 // Contains functions for simulating particles
 
@@ -32,6 +46,8 @@ struct Particle{
         return this->cameradistance > that.cameradistance;
     }
 };
+
+typedef struct Particle Particle;
 
 extern const int MaxParticles;
 extern Particle ParticlesContainer[];

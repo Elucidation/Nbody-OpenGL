@@ -1,6 +1,14 @@
 // Hard-code screen size for now
-#include "sim.hpp"
+#include "gfx.hpp"
+
+#include "loadShader.hpp" // Shader
+#include "texture.hpp" // TextureIDs
+
 #include "octree.hpp"
+
+#include <stdio.h>
+#include <stdlib.h>
+
 
 #define SCREEN_WIDTH 1600
 #define SCREEN_HEIGHT 1200
@@ -16,8 +24,8 @@ GLuint billboard_vertex_buffer;
 GLuint particles_position_buffer;
 GLuint particles_color_buffer;
 
-static GLfloat* g_particle_position_size_data;
-static GLubyte* g_particle_color_data;
+GLfloat* g_particle_position_size_data;
+GLubyte* g_particle_color_data;
 
 ///
 GLuint quadProgramID;
@@ -58,19 +66,12 @@ static const GLubyte markerColors[] = {
 };
 
 
-// extern bool showOct;
-
 const unsigned int maxLinePoints = 16; // 12 lines to a box, 4 overlapping for strip
-///
-void drawOctCOM(Octree* root, const float size=1.f, const int depth=0, const int max_depth=10);
-void drawParticles(GLubyte* g_particle_color_data, unsigned long ParticlesCount);
-void drawOrigin();
-void drawBounds(const Bounds& bbox, const GLubyte* color);
-void drawMarker(const glm::vec3 point, const float half_width);
-void drawBox(const glm::vec3 bmin, const glm::vec3 bmax, const GLubyte* color);
-void drawTree(Octree* root, int depth=0, int maxDepth=8);
 
-void colorParticles(Octree* oct);
+GLFWwindow* window; // Needed by controls.cpp
+
+///
+
 
 void updateGfx(GLfloat* g_particle_position_size_data, 
     GLubyte* g_particle_color_data, unsigned long ParticlesCount, Octree* oct)

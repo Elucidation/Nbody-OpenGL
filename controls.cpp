@@ -1,11 +1,12 @@
+#include "controls.hpp"
+
 #include <stdio.h>
 // Include GLFW
-#include <GLFW/glfw3.h>
-extern GLFWwindow* window; // The "extern" keyword here is to access the variable "window" declared in tutorialXXX.cpp. This is a hack to keep the tutorials simple. Please avoid this.
+// #include <GLFW/glfw3.h>
+// #include "gfx.hpp"
 
+extern GLFWwindow* window;
 
-
-#include "controls.hpp"
 
 glm::mat4 ViewMatrix;
 glm::mat4 ProjectionMatrix;

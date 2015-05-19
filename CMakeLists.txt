@@ -9,8 +9,6 @@ find_package(PkgConfig REQUIRED)
 pkg_search_module(GLFW REQUIRED glfw3)
 include_directories(${GLFW_INCLUDE_DIRS})
 
-message("GLFW [${GLFW_LIBRARIES}]")
-
 # Add GLEW
 find_package(GLEW REQUIRED)
 if (NOT GLEW_FOUND)
@@ -32,7 +30,9 @@ add_library(Texture texture.cpp texture.hpp)
 add_library(Controls controls.cpp controls.hpp)
 add_library(Sim sim.cpp sim.hpp)
 add_library(Octree octree.cpp octree.hpp)
-set(SOURCES play.cpp loadShader.hpp texture.hpp controls.hpp octree.hpp sim.hpp)
+add_library(Gfx gfx.cpp gfx.hpp loadShader.cpp texture.cpp) #  controls.hpp octree.hpp sim.hpp octree.cpp
+
+set(SOURCES play.cpp loadShader.hpp texture.hpp controls.hpp sim.hpp octree.hpp gfx.hpp)
 
 # Executables
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -40,7 +40,7 @@ add_executable(play ${SOURCES})
 
 
 # Link libraries
-set(COMMON Shader Texture Controls)
+set(COMMON Shader Texture Controls Sim Octree Gfx)
 target_link_libraries(play glfw3 ${GLFW_LIBRARIES} ${GL_LIBRARY} ${COMMON})
 
 # Copy shaders over

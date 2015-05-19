@@ -5,26 +5,10 @@
 #include <vector>
 #include <algorithm>
 
-#include <GL/glew.h> // GLEW
-#include <GLFW/glfw3.h> // GLFW
-GLFWwindow* window; // Needed by controls.cpp
-
-// GLM
-#define GLM_FORCE_RADIANS
-#define GLM_SWIZZLE // for <glm::vec4>.xyz
-#include <glm/glm.hpp> 
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/norm.hpp>
-#include <glm/gtx/string_cast.hpp>
-using namespace glm;
-
-#include "loadShader.hpp" // Shader
-#include "texture.hpp" // TextureIDs
 #include "controls.hpp" // Controls
 #include "sim.hpp" // Sim (contains N count etc.)
 #include "octree.hpp" // Octree
-
-#include "gfx.cpp" // Graphics call (uses octree Bounds struct)
+#include "gfx.hpp" // Graphics call (uses octree Bounds struct)
 
 extern bool doRun;
 

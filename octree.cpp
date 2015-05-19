@@ -1,5 +1,4 @@
 // Used for oct-tree decomposition & Barnes-Hut algorithm in nbody sim
-
 #include "octree.hpp"
 
 extern const int MaxParticles;
