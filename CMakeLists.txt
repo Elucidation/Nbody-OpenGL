@@ -9,6 +9,8 @@ find_package(PkgConfig REQUIRED)
 pkg_search_module(GLFW REQUIRED glfw3)
 include_directories(${GLFW_INCLUDE_DIRS})
 
+message("GLFW [${GLFW_LIBRARIES}]")
+
 # Add GLEW
 find_package(GLEW REQUIRED)
 if (NOT GLEW_FOUND)
@@ -37,7 +39,7 @@ add_executable(play ${SOURCES})
 
 # Link libraries
 set(COMMON Shader Texture Controls)
-target_link_libraries(play ${GLFW_LIBRARIES} ${GL_LIBRARY} ${COMMON})
+target_link_libraries(play glfw3 ${GLFW_LIBRARIES} ${GL_LIBRARY} ${COMMON})
 
 # Copy shaders over
 configure_file(BasicVertexShader.vert BasicVertexShader.vert COPYONLY)
