@@ -50,7 +50,7 @@ public:
 
     void insert(Particle* p, int maxDepth = 0, int depth = 0);
     int getChildIndex(const glm::vec3& point);
-    void getStats(int& nodes, int& leafs);
+    int getStats(int& nodes, int& leafs);
 };
 
 

@@ -11,7 +11,7 @@
 // Barnes Hut approximation constants
 #define BARNES_HUT_RATIO_THRESHOLD 0.5
 
-const int MaxParticles = 5000;
+const int MaxParticles = 10000;
 Particle ParticlesContainer[MaxParticles];
 
 const float NewParticleSpeed = 10000000.0f;
@@ -114,7 +114,7 @@ void updatePositionColorBuffer(GLfloat* g_particle_position_size_data, GLubyte* 
 unsigned long calc_all_acc_brute()
 {
     // Simulate all particles
-    unsigned long numForceCalcs = 0;
+    unsigned int numForceCalcs = 0;
     for(int i=0; i<MaxParticles; i++){
 
         Particle& p = ParticlesContainer[i]; // shortcut
@@ -152,20 +152,19 @@ unsigned long calc_all_acc_brute()
 // calculate all accelerations for all particles
 unsigned long calc_all_acc_barnes_hut(Octree* rootOctree)
 {
-    unsigned long numForceCalcs = 0;
+    unsigned int numForceCalcs = 0;
     for(int i=0; i<MaxParticles; i++)
     {
-        Particle* p = &(ParticlesContainer[i]);
-        numForceCalcs += acc_barnes_hut(p, rootOctree);
+        numForceCalcs += acc_barnes_hut(ParticlesContainer[i], rootOctree);
     }
 }
 
 // Calculate accelerations on body using barnes hut algorithm on given octree
 // in-place update particle's acceleration vector with it
-unsigned long acc_barnes_hut(Particle* body, Octree* root)
+unsigned long acc_barnes_hut(Particle& body, Octree* root)
 {
     
-    unsigned long numForceCalcs = 0;
+    unsigned int numForceCalcs = 0;
     // Check particle with root node
     // if node size / distance < theta threshold
     //   update body acceleration with node com and done
@@ -176,13 +175,13 @@ unsigned long acc_barnes_hut(Particle* body, Octree* root)
     GLfloat s = glm::compMin(root->getBounds()->half_width) * 2.0f;
 
     // Distance from body to CoM of node
-    GLfloat d = glm::distance(body->pos, root->com.xyz());
+    GLfloat d = glm::distance(body.pos, root->com.xyz());
 
     // Test node size / distance threshold
     if (s/d < BARNES_HUT_RATIO_THRESHOLD)
     {
         // If sufficiently far away, approximate
-        calc_acc(*body, root->com);
+        calc_acc(body, root->com);
         numForceCalcs++;
     }
     else if (!root->interior)
@@ -190,9 +189,9 @@ unsigned long acc_barnes_hut(Particle* body, Octree* root)
         // Not far enough away, but is a leaf node
         for (std::vector<Particle*>::iterator i = root->bods.begin(); i != root->bods.end(); ++i)
         {
-            if (body != *i)
+            if (&body != *i)
             {
-                calc_acc(*body, *i);
+                calc_acc(body, **i);
                 numForceCalcs++;
             }
         }
@@ -223,13 +222,13 @@ void calc_acc(Particle& body, const glm::vec4& com)
 }
 
 // Calculate acceleration of body to another body
-void calc_acc(Particle& body, const Particle* other)
+void calc_acc(Particle& body, const Particle& other)
 {
-    glm::vec3 d = other->pos - body.pos; // distance
+    glm::vec3 d = other.pos - body.pos; // distance
     float r2 = glm::dot(d,d); // distance squared
     float r3 = r2 * glm::sqrt(r2);
 
-    float f_mag = (G*body.size*other->size) / (r3 + ETA);
+    float f_mag = (G*body.size*other.size) / (r3 + ETA);
     glm::vec3 f = d * f_mag; // force vector
 
     body.acc += f;
@@ -322,7 +321,7 @@ void createNewParticles(unsigned long ParticlesCount, double delta)
 // Euler integration
 unsigned long simulateEuler(double dt)
 {
-    unsigned long numForceCalcs= calc_all_acc_brute();
+    unsigned int numForceCalcs= calc_all_acc_brute();
     updatePositionsVelocities(dt);
     return numForceCalcs;
 }
@@ -331,8 +330,8 @@ unsigned long simulateEuler(double dt)
 unsigned long simulateLeapfrog(Octree* oct, double dt)
 {
     updatePositions(0.5*dt);
-    // unsigned long numForceCalcs= calc_all_acc_brute();
-    unsigned long numForceCalcs= calc_all_acc_barnes_hut(oct);
+    // unsigned int numForceCalcs= calc_all_acc_brute();
+    unsigned int numForceCalcs= calc_all_acc_barnes_hut(oct);
     updateVelocities(dt);
     updatePositions(0.5*dt);
 

@@ -107,9 +107,9 @@ int main(int argc, char const *argv[])
                 1000.0/double(nbFrames), (double)(ParticlesCount)/1000.0, numForceCalcs, 
                 simDelta*1000.0, octDelta*1000.0, sortDelta*1000.0, gfxDelta*1000.0);
 
-            // int nodes=0, leafs=0;
-            // oct->getStats(nodes, leafs);
-            // printf("Octree | Nodes: %d, Leafs: %d\n", nodes, leafs);
+            int nodes=0, leafs=0;
+            int depth = oct->getStats(nodes, leafs);
+            printf("Octree | Nodes: %d, Leafs: %d | Max Depth %d\n", nodes, leafs, depth);
             // Bounds b = calculateBounds();
             // printf("Bounds: %s - %s\n", to_string(b.min).c_str(), to_string(b.max).c_str());
             printf("Oct | COM: <%.2f, %.2f, %.2f> M:%g\n", oct->com.x, oct->com.y, oct->com.z, oct->com.w);

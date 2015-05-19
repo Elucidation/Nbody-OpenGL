@@ -87,7 +87,7 @@ void updateGfx(GLfloat* g_particle_position_size_data,
   if (showOct)
   {
     
-    drawTree(oct);
+    drawTree(oct, 0, 20); // maxdepth of 20
     // drawOctCOM(oct); // For simple visualization of node center of masses
   }  
   // Color Particles based on Oct-tree

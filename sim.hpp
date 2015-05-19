@@ -59,9 +59,9 @@ void updatePositionColorBuffer(GLfloat* g_particle_position_size_data,
 unsigned long calc_all_acc_brute();
 
 unsigned long calc_all_acc_barnes_hut(Octree* rootOctree);
-unsigned long acc_barnes_hut(Particle* body, Octree* root);
+unsigned long acc_barnes_hut(Particle& body, Octree* root);
 void calc_acc(Particle& body, const glm::vec4& com);
-void calc_acc(Particle& body, const Particle* other);
+void calc_acc(Particle& body, const Particle& other);
 
 // Also resets accelerations
 unsigned long ageKillResetParticles(double delta);

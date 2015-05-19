@@ -4,6 +4,9 @@
 extern const int MaxParticles;
 extern Particle ParticlesContainer[];
 
+// Maximum depth of oct-tree
+#define OCT_MAX_DEPTH 10
+
 void Octree::Init()
 {
     bbox = new Bounds();
@@ -72,11 +75,6 @@ bool Octree::isInBounds(const glm::vec3& point)
 //
 void Octree::insert(Particle* p, int maxDepth /*= 0*/, int depth /*= 0*/)
 {
-    if (depth > maxDepth+10)
-    {
-        return;
-    }
-
     // Update COM with added object
     com = glm::vec4(  (com.xyz() * com.w + p->pos * p->size) / (com.w + p->size), 
         com.w + p->size);
@@ -141,20 +139,26 @@ int Octree::getChildIndex(const glm::vec3& point)
     return idx;
 }
 
-void Octree::getStats(int& nodes, int& leafs)
+int Octree::getStats(int& nodes, int& leafs)
 {
+    int depth = 0;
     nodes++;
     if (interior)
     {
         for (int i = 0; i < 8; ++i)
         {
-            children[i]->getStats(nodes, leafs);
+            int other_depth = 1 + children[i]->getStats(nodes, leafs);
+            if (other_depth > depth)
+            {
+                depth = other_depth;
+            }
         }
     }
     else
     {
         leafs++;
     }
+    return depth;
 }
 
 
@@ -194,7 +198,7 @@ Octree* generateOctree()
         Particle* p = &(ParticlesContainer[i]); // shortcut        
         if(p->life > 0.0f)
         {
-            root->insert(p, 10);
+            root->insert(p, OCT_MAX_DEPTH);
         }
     }
     return root;
