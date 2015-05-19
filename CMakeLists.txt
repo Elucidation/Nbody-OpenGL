@@ -50,8 +50,6 @@ configure_file(lineShader.vert lineShader.vert COPYONLY)
 configure_file(lineShader.frag lineShader.frag COPYONLY)
 
 # Copy textures over
-# configure_file(uvtemplate.bmp uvtemplate.bmp COPYONLY)
-# configure_file(uvtemplate.DDS uvtemplate.DDS COPYONLY)
 configure_file(point.DDS point.DDS COPYONLY)
 configure_file(point2.DDS point2.DDS COPYONLY)
 configure_file(test.DDS test.DDS COPYONLY)

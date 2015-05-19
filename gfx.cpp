@@ -53,6 +53,7 @@ static const GLubyte octantColors[] = {
   255, 0, 0, 150,
   0, 255, 0, 150,
   0, 0, 255, 150,
+
   255, 255, 0, 150,
   0, 255, 255, 150,
   255, 0, 255, 150,
@@ -79,17 +80,20 @@ void updateGfx(GLfloat* g_particle_position_size_data,
   // Clear the screen
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+  // Draw Origin
   drawOrigin();
 
+  // Draw Oct-tree
   if (showOct)
   {
-    // Draw Oct-tree
+    
     drawTree(oct);
     // drawOctCOM(oct); // For simple visualization of node center of masses
   }  
-  
-  // Draw Particles
+  // Color Particles based on Oct-tree
   // colorParticles(oct); // Color particles based on oct-tree quadrant
+
+  // Draw Particles
   drawParticles(g_particle_color_data, ParticlesCount);
 
   // Swap buffers
@@ -105,10 +109,11 @@ void colorParticles(Octree* oct)
         if(p.life > 0.0f)
         {
           int idx = oct->getChildIndex(p.pos);
+          // printf("%d %d %d %d\n", octantColors[ 4*idx ], octantColors[ 4*idx +1], octantColors[ 4*idx +2], octantColors[ 4*idx +3]);
           p.r = octantColors[ 4*idx ];
           p.g = octantColors[ 4*idx + 1 ];
           p.b = octantColors[ 4*idx + 2 ];
-          p.a = octantColors[ 4*idx + 3 ];
+          p.a = 255; //octantColors[ 4*idx + 3 ];
 
         }
     }

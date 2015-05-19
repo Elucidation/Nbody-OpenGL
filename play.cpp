@@ -14,6 +14,11 @@ extern bool doRun;
 
 int main(int argc, char const *argv[])
 {
+    printf("Controls: \n");
+    printf("Space - Pause/Run\n");
+    printf("T - Show/Hide Octree\n");
+    printf("P - Enable/Disable Mouse Camera Control\n");
+    
     initGfx();
 
     double lastTime = glfwGetTime();
