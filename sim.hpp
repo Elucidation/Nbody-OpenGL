@@ -1,5 +1,6 @@
 #ifndef SIM_HPP
 #define SIM_HPP
+// Contains functions for simulating particles
 
 #include <algorithm> // for length2
 
@@ -13,25 +14,12 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/norm.hpp>
 #include <glm/gtx/string_cast.hpp>
+#include <glm/gtx/component_wise.hpp>
 using namespace glm;
 
-// #include "gfx.hpp"
-
-// #include <GL/glew.h>
-
-// Include GLM
-// #define GLM_FORCE_RADIANS
-// #include <glm/glm.hpp>
-// #include <glm/gtc/constants.hpp>
-// #include <glm/gtx/norm.hpp>
-// #include <glm/gtc/matrix_transform.hpp>
-// using namespace glm;
-
-// Contains functions for simulating particles
-
-// Physics constants
-#define G 2.0f
-#define ETA 0.01f
+// Forward Declarations
+class Octree;
+struct Bounds;
 
 // CPU representation of a particle
 struct Particle{
@@ -70,6 +58,11 @@ void updatePositionColorBuffer(GLfloat* g_particle_position_size_data,
 // ^ Normally called automatically by ageKillResetParticles
 unsigned long calc_all_acc_brute();
 
+unsigned long calc_all_acc_barnes_hut(Octree* rootOctree);
+unsigned long acc_barnes_hut(Particle* body, Octree* root);
+void calc_acc(Particle& body, const glm::vec4& com);
+void calc_acc(Particle& body, const Particle* other);
+
 // Also resets accelerations
 unsigned long ageKillResetParticles(double delta);
 void createNewParticles(unsigned long ParticlesCount, double delta);
@@ -78,6 +71,6 @@ void createNewParticles(unsigned long ParticlesCount, double delta);
 unsigned long simulateEuler(double dt);
 
 // Leapfrog integration
-unsigned long simulateLeapfrog(double dt);
+unsigned long simulateLeapfrog(Octree* oct, double dt);
 
 #endif

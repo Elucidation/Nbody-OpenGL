@@ -18,7 +18,7 @@ int main(int argc, char const *argv[])
     printf("Space - Pause/Run\n");
     printf("T - Show/Hide Octree\n");
     printf("P - Enable/Disable Mouse Camera Control\n");
-    
+
     initGfx();
 
     double lastTime = glfwGetTime();
@@ -65,7 +65,7 @@ int main(int argc, char const *argv[])
 
             // Simulate all particles
             // unsigned long numForceCalcs = simulateEuler(dt);
-            numForceCalcs = simulateLeapfrog(dt);
+            numForceCalcs = simulateLeapfrog(oct, dt);
 
             simDelta = glfwGetTime() - currentTime;
         } 

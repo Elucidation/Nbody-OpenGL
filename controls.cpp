@@ -19,7 +19,7 @@ glm::mat4 getProjectionMatrix(){
 }
 
 bool doRun = false;
-bool showOct = true;
+bool showOct = false;
 
 // Initial position : on +Z
 glm::vec3 position = glm::vec3( 0, 0, 0 ); 
