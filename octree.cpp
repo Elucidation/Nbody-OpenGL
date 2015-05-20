@@ -50,7 +50,7 @@ void Octree::clear()
     }
 }
 
-Bounds* Octree::getBounds() { return bbox; }
+// Bounds* Octree::getBounds() { return bbox; }
 
 void Octree::setBounds(Bounds* b) { bbox = b; }
 

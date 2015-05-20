@@ -27,8 +27,8 @@ typedef struct Bounds Bounds;
 
 class Octree
 {
-    Bounds* bbox;
 public:
+    Bounds* bbox;
     bool interior;
     glm::vec4 com; // center of mass (position, size)
     std::vector<Particle*> bods;
@@ -42,7 +42,7 @@ public:
     void Init();
     void clear();
 
-    Bounds* getBounds();
+    // Bounds* getBounds();
     void setBounds(Bounds* b);
     bool isInBounds(const glm::vec3& point);
 

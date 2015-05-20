@@ -5,11 +5,15 @@
 #include "octree.hpp"
 
 // Physics constants
-#define G 0.1f
+#define G 0.2f
 #define ETA 0.01f
 
 // Barnes Hut approximation constants
-#define BARNES_HUT_RATIO_THRESHOLD 0.5
+#define BARNES_HUT_RATIO_THRESHOLD 1.0
+// Choosing something like 100 means  ~always choose root node, should be ~O(n) calculations
+// Choosing 0 devolves to brute force O(n^2), with a worse constant than regular brute force
+
+#define SPREAD 1.0f
 
 const int MaxParticles = 10000;
 Particle ParticlesContainer[MaxParticles];
@@ -150,7 +154,7 @@ unsigned long calc_all_acc_brute()
 }
 
 // calculate all accelerations for all particles
-unsigned long calc_all_acc_barnes_hut(Octree* rootOctree)
+unsigned long calc_all_acc_barnes_hut(const Octree& rootOctree)
 {
     unsigned int numForceCalcs = 0;
     for(int i=0; i<MaxParticles; i++)
@@ -161,7 +165,7 @@ unsigned long calc_all_acc_barnes_hut(Octree* rootOctree)
 
 // Calculate accelerations on body using barnes hut algorithm on given octree
 // in-place update particle's acceleration vector with it
-unsigned long acc_barnes_hut(Particle& body, Octree* root)
+unsigned long acc_barnes_hut(Particle& body, const Octree& root)
 {
     
     unsigned int numForceCalcs = 0;
@@ -172,22 +176,22 @@ unsigned long acc_barnes_hut(Particle& body, Octree* root)
     //   recursively call acc_barnes_hut(body, child) for each child and done
 
     // Min width of node bounding box
-    GLfloat s = glm::compMin(root->getBounds()->half_width) * 2.0f;
+    GLfloat s = glm::compMin(root.bbox->half_width) * 2.0f;
 
     // Distance from body to CoM of node
-    GLfloat d = glm::distance(body.pos, root->com.xyz());
+    GLfloat d = glm::distance(body.pos, root.com.xyz());
 
     // Test node size / distance threshold
     if (s/d < BARNES_HUT_RATIO_THRESHOLD)
     {
         // If sufficiently far away, approximate
-        calc_acc(body, root->com);
+        calc_acc(body, root.com);
         numForceCalcs++;
     }
-    else if (!root->interior)
+    else if (!root.interior)
     {
         // Not far enough away, but is a leaf node
-        for (std::vector<Particle*>::iterator i = root->bods.begin(); i != root->bods.end(); ++i)
+        for (std::vector<Particle*>::const_iterator i = root.bods.begin(); i != root.bods.end(); ++i)
         {
             if (&body != *i)
             {
@@ -201,7 +205,7 @@ unsigned long acc_barnes_hut(Particle& body, Octree* root)
         // Not far enough away, and has child nodes, recurse on each child
         for (int i = 0; i < 8; ++i)
         {
-            numForceCalcs += acc_barnes_hut(body, root->children[i]);
+            numForceCalcs += acc_barnes_hut(body, *(root.children[i]));
         }
     }
 
@@ -289,7 +293,6 @@ void createNewParticles(unsigned long ParticlesCount, double delta)
             ParticlesContainer[particleIndex].life = 50.0f + 10.0f*((rand() % 1000)/1000.0f);
             ParticlesContainer[particleIndex].pos = glm::vec3(0,0,-20.0f);
 
-            float spread = 0.5f;
             glm::vec3 maindir = glm::vec3(0.0f, 10.0f, 0.0f);
             // Very bad way to generate a random direction; 
             // See for instance http://stackoverflow.com/questions/5408276/python-uniform-spherical-distribution instead,
@@ -303,7 +306,7 @@ void createNewParticles(unsigned long ParticlesCount, double delta)
             ParticlesContainer[particleIndex].pos += randomdir*5.0f; // Not directly in center
             
             // ParticlesContainer[particleIndex].vel = maindir + randomdir*spread;
-            ParticlesContainer[particleIndex].vel = randomdir*spread;
+            ParticlesContainer[particleIndex].vel = randomdir*SPREAD;
 
 
             // Very bad way to generate a random color
@@ -331,7 +334,7 @@ unsigned long simulateLeapfrog(Octree* oct, double dt)
 {
     updatePositions(0.5*dt);
     // unsigned int numForceCalcs= calc_all_acc_brute();
-    unsigned int numForceCalcs= calc_all_acc_barnes_hut(oct);
+    unsigned int numForceCalcs= calc_all_acc_barnes_hut(*oct);
     updateVelocities(dt);
     updatePositions(0.5*dt);
 

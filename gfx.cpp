@@ -312,7 +312,8 @@ void drawTree(Octree* root, int depth /*=0*/, int maxDepth /*=5*/)
   }
   else if (!root->bods.empty())
   {
-    drawBounds(*(root->getBounds()), color);
+    // drawBounds(*(root->getBounds()), color);
+    drawBounds(*(root->bbox), color);
   }
 }
 
@@ -551,7 +552,7 @@ GLFWwindow* setupGL()
     // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE); 
 
     GLFWwindow* window;
-    window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Play", NULL, NULL);
+    window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "OpenGL Barnes-Hut N-Body Simulation", NULL, NULL);
 
     if (!window)
     {
