@@ -5,7 +5,7 @@
 #include "octree.hpp"
 
 // Physics constants
-#define G 0.2f
+#define G 0.01f
 #define ETA 0.01f
 
 // Barnes Hut approximation constants
@@ -176,7 +176,7 @@ unsigned long acc_barnes_hut(Particle& body, const Octree& root)
     //   recursively call acc_barnes_hut(body, child) for each child and done
 
     // Min width of node bounding box
-    GLfloat s = glm::compMin(root.bbox->half_width) * 2.0f;
+    GLfloat s = glm::compMin(root.bbox.half_width) * 2.0f;
 
     // Distance from body to CoM of node
     GLfloat d = glm::distance(body.pos, root.com.xyz());

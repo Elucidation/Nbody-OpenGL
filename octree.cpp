@@ -9,7 +9,7 @@ extern Particle ParticlesContainer[];
 
 void Octree::Init()
 {
-    bbox = new Bounds();
+    // bbox = new Bounds();
 
     // Initially a leaf
     interior = false;
@@ -26,8 +26,8 @@ Octree::Octree(const glm::vec3& center, const glm::vec3& half_width)
     Init();
     
     // Set up bbox with given values
-    bbox->center = glm::vec3(center);
-    bbox->half_width = glm::vec3(half_width);
+    bbox.center = glm::vec3(center);
+    bbox.half_width = glm::vec3(half_width);
 };
 
 Octree::Octree() { Init(); };
@@ -36,7 +36,7 @@ Octree::~Octree() { clear(); }
 
 void Octree::clear()
 {
-    delete bbox;
+    // delete bbox;
 
     bods.clear();
     
@@ -50,13 +50,9 @@ void Octree::clear()
     }
 }
 
-// Bounds* Octree::getBounds() { return bbox; }
-
-void Octree::setBounds(Bounds* b) { bbox = b; }
-
 bool Octree::isInBounds(const glm::vec3& point)
 {
-    return glm::all(glm::lessThan(glm::abs(point - bbox->center), bbox->half_width));
+    return glm::all(glm::lessThan(glm::abs(point - bbox.center), bbox.half_width));
 }
 
 // void calcForces(Particle* p, )
@@ -111,11 +107,11 @@ void Octree::insert(Particle* p, int maxDepth /*= 0*/, int depth /*= 0*/)
         // Create new children with current bounding boxes
         for (int i = 0; i < 8; ++i)
         {
-            glm::vec3 child_center = glm::vec3(bbox->center);
-            child_center.x += bbox->half_width.x * (i&4 ? .5f : -.5f);
-            child_center.y += bbox->half_width.y * (i&2 ? .5f : -.5f);
-            child_center.z += bbox->half_width.z * (i&1 ? .5f : -.5f);
-            glm::vec3 child_half_width = bbox->half_width*.5f;
+            glm::vec3 child_center = glm::vec3(bbox.center);
+            child_center.x += bbox.half_width.x * (i&4 ? .5f : -.5f);
+            child_center.y += bbox.half_width.y * (i&2 ? .5f : -.5f);
+            child_center.z += bbox.half_width.z * (i&1 ? .5f : -.5f);
+            glm::vec3 child_half_width = bbox.half_width*.5f;
             children[i] = new Octree(child_center, child_half_width );
         }
 
@@ -130,11 +126,11 @@ int Octree::getChildIndex(const glm::vec3& point)
 {
     int idx = 0;
     // octants from -x,-y,-z to x,y,z
-    if (point.x >= bbox->center.x)
+    if (point.x >= bbox.center.x)
         idx |= 1 << 2;
-    if (point.y >= bbox->center.y)
+    if (point.y >= bbox.center.y)
         idx |= 1 << 1;
-    if (point.z >= bbox->center.z)
+    if (point.z >= bbox.center.z)
         idx |= 1 << 0;
     return idx;
 }
@@ -161,8 +157,8 @@ int Octree::getStats(int& nodes, int& leafs)
     return depth;
 }
 
-
-Bounds* calculateMainBounds()
+// Set bounding box of current node to all particles
+void Octree::calculateMainBounds()
 {
     glm::vec3 bmin = glm::vec3(10000,10000,10000);
     glm::vec3 bmax = glm::vec3(-100000,-100000,-100000);
@@ -176,11 +172,8 @@ Bounds* calculateMainBounds()
         }
     }
 
-    Bounds* bbox = new Bounds();
-    bbox->center = (bmin + bmax)/2.0f;
-    bbox->half_width = (bmax-bmin)/2.0f;
-    
-    return bbox;
+    bbox.center = (bmin + bmax)/2.0f;
+    bbox.half_width = (bmax-bmin)/2.0f;
 }
 
 Octree* generateOctree()
@@ -189,8 +182,9 @@ Octree* generateOctree()
     Octree* root = new Octree();
     
     // 2 - Update bounds
-    Bounds* b = calculateMainBounds(); //bbox of all particles
-    root->setBounds(b);
+    // Bounds b = calculateMainBounds(); //bbox of all particles
+    // root->setBounds(b);
+    root->calculateMainBounds();
 
     // 3 - Add all particles
     for(int i=0; i<MaxParticles; i++)

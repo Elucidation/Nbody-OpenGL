@@ -313,7 +313,7 @@ void drawTree(Octree* root, int depth /*=0*/, int maxDepth /*=5*/)
   else if (!root->bods.empty())
   {
     // drawBounds(*(root->getBounds()), color);
-    drawBounds(*(root->bbox), color);
+    drawBounds(root->bbox, color);
   }
 }
 
