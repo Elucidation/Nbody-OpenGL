@@ -1,4 +1,4 @@
-# Play
+# Real-time OpenGL N-body simulation using Barnes-Hut algorithm
 ---
 
 **WARNING MASTER BRANCH IS EXPERIMENTAL AND WILL PROBABLY BREAK**
@@ -6,8 +6,16 @@
 This is a sandbox for practicing OpenGL using [GLFW](http://www.glfw.org).
 Check the other branches for working examples
 
+Scroll down for installation instructions.
+
 #### Octree decomposition
 ![Octree visualization](octree_vis.gif)
+
+### Videos
+* 10,000 Particles https://youtu.be/YK5j07rh2AA
+* 5,000 Particles https://youtu.be/AMuyI99iwBw
+
+## Previous results
 
 #### 1000 Particle NBody Sim
 
