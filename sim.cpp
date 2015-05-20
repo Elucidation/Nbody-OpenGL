@@ -5,7 +5,7 @@
 #include "octree.hpp"
 
 // Physics constants
-#define G 0.1f
+#define G 10.0f
 #define ETA 0.01f
 
 // Barnes Hut approximation constants
@@ -13,9 +13,9 @@
 // Choosing something like 100 means  ~always choose root node, should be ~O(n) calculations
 // Choosing 0 devolves to brute force O(n^2), with a worse constant than regular brute force
 
-#define SPREAD 1.0f
+#define SPREAD 2.0f
 
-const int MaxParticles = 5000;
+const int MaxParticles = 1000;
 Particle ParticlesContainer[MaxParticles];
 
 const float NewParticleSpeed = 10000000.0f;
@@ -179,10 +179,11 @@ unsigned long acc_barnes_hut(Particle& body, const Octree& root)
     GLfloat s = glm::compMin(root.bbox.half_width) * 2.0f;
 
     // Distance from body to CoM of node
-    GLfloat d = glm::distance(body.pos, root.com.xyz());
+    // GLfloat d = glm::distance(body.pos, root.com.xyz());
+    glm::vec3 d = body.pos - root.com.xyz();
 
     // Test node size / distance threshold
-    if (s/d < BARNES_HUT_RATIO_THRESHOLD)
+    if ( (s*s)/glm::dot(d,d) < BARNES_HUT_RATIO_THRESHOLD)
     {
         // If sufficiently far away, approximate
         calc_acc(body, root.com);
@@ -217,6 +218,7 @@ void calc_acc(Particle& body, const glm::vec4& com)
 {
     glm::vec3 d = com.xyz() - body.pos; // distance
     float r2 = glm::dot(d,d); // distance squared
+
     float r3 = r2 * glm::sqrt(r2);
 
     float f_mag = (G*body.size*com.w) / (r3 + ETA);
@@ -300,7 +302,6 @@ void createNewParticles(unsigned long ParticlesCount, double delta)
             
             // ParticlesContainer[particleIndex].vel = maindir + randomdir*spread;
             ParticlesContainer[particleIndex].vel = randomdir*SPREAD;
-
 
             // Very bad way to generate a random color
             ParticlesContainer[particleIndex].r = rand() % 256;
