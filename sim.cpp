@@ -5,17 +5,17 @@
 #include "octree.hpp"
 
 // Physics constants
-#define G 0.01f
+#define G 0.1f
 #define ETA 0.01f
 
 // Barnes Hut approximation constants
-#define BARNES_HUT_RATIO_THRESHOLD 1.0
+#define BARNES_HUT_RATIO_THRESHOLD 0.5f
 // Choosing something like 100 means  ~always choose root node, should be ~O(n) calculations
 // Choosing 0 devolves to brute force O(n^2), with a worse constant than regular brute force
 
 #define SPREAD 1.0f
 
-const int MaxParticles = 10000;
+const int MaxParticles = 5000;
 Particle ParticlesContainer[MaxParticles];
 
 const float NewParticleSpeed = 10000000.0f;
@@ -228,14 +228,7 @@ void calc_acc(Particle& body, const glm::vec4& com)
 // Calculate acceleration of body to another body
 void calc_acc(Particle& body, const Particle& other)
 {
-    glm::vec3 d = other.pos - body.pos; // distance
-    float r2 = glm::dot(d,d); // distance squared
-    float r3 = r2 * glm::sqrt(r2);
-
-    float f_mag = (G*body.size*other.size) / (r3 + ETA);
-    glm::vec3 f = d * f_mag; // force vector
-
-    body.acc += f;
+    calc_acc(body, glm::vec4(other.pos.xyz(), other.size));
 }
 
 // Also resets accelerations
