@@ -8,12 +8,14 @@ Check the other branches for working examples
 
 Scroll down for installation instructions.
 
+### Videos
+
+[![10,000 Particles](http://i.imgur.com/hpBYypY.png)](https://youtu.be/YK5j07rh2AA)
+
+* 5,000 Particles https://youtu.be/AMuyI99iwBw
+
 #### Octree decomposition
 ![Octree visualization](octree_vis.gif)
-
-### Videos
-* 10,000 Particles https://youtu.be/YK5j07rh2AA
-* 5,000 Particles https://youtu.be/AMuyI99iwBw
 
 ## Previous results
 
